@@ -1,6 +1,27 @@
 {
   "name": "parallax",
   "version": "0.1.0",
+  "description": "Per-issue bounties for open-source work, escrowed and settled on Stellar.",
+  "license": "MIT",
+  "homepage": "https://github.com/zeemscript/parallax#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zeemscript/parallax.git"
+  },
+  "bugs": {
+    "url": "https://github.com/zeemscript/parallax/issues"
+  },
+  "keywords": [
+    "stellar",
+    "soroban",
+    "usdc",
+    "bounties",
+    "escrow",
+    "open-source"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
   "private": true,
   "type": "module",
   "scripts": {
