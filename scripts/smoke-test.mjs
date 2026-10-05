@@ -62,19 +62,21 @@ try {
   await settle();
   assert.equal(await page.locator('.list-row').count(), 1);
   await page.getByLabel('Search', { exact: true }).fill('');
+  // Wait on each tab's own result count: the previous tab's tiles linger for a
+  // frame after the URL changes, so waiting on any tile can count the old view.
   await page.getByRole('tab', { name: 'Repositories' }).click();
   await page.waitForURL('**/explore/repos');
-  await page.locator('.repo-tile').first().waitFor();
+  await page.locator('.result-count', { hasText: '6 repositories' }).waitFor();
   assert.equal(await page.locator('.repo-tile').count(), 6);
   await page.getByRole('tab', { name: 'Organizations' }).click();
   await page.waitForURL('**/explore/orgs');
-  await page.locator('.repo-tile').first().waitFor();
+  await page.locator('.result-count', { hasText: '2 organizations' }).waitFor();
   assert.equal(await page.locator('.repo-tile').count(), 2, 'stellar and OpenZeppelin');
 
   // filters
   await page.getByRole('tab', { name: 'Issues' }).click();
   await page.waitForURL('**/explore');
-  await page.locator('.list-row').first().waitFor();
+  await page.locator('.result-count', { hasText: '7 issues' }).waitFor();
   await page.getByRole('button', { name: 'Filters' }).click();
   await page.getByLabel('Complexity').selectOption('High');
   await settle();
