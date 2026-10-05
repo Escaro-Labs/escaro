@@ -239,21 +239,6 @@ a.row-title:hover { text-decoration: underline; text-underline-offset: 2px; }
   .auth-card { padding: var(--s5); }
 }
 
-/* hero side visual — the wave cadence at a glance */
-.wave-card { overflow: hidden; }
-.wave-card-head {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: var(--s3) var(--s4); border-bottom: 1px solid var(--line); background: var(--panel-2);
-}
-.wave-card-head .dot { background: var(--ok); }
-.wave-track { padding: var(--s2); }
-.wave-node { display: flex; align-items: center; gap: 10px; padding: 10px var(--s3); border-radius: var(--r2); }
-.wave-node + .wave-node { border-top: 1px solid var(--line-soft); }
-.wave-node-label { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
-.wave-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--line); flex-shrink: 0; }
-.wave-node.active .wave-dot { background: var(--ok); box-shadow: 0 0 0 3px var(--ok-bg); }
-.wave-node.upcoming .wave-dot { border: 1px solid var(--ink-4); background: transparent; }
-.wave-node.completed { opacity: .6; }
 
 /* real GitHub org avatars */
 .avatar.img { position: relative; padding: 0; overflow: hidden; background: var(--panel-2); }
@@ -334,7 +319,7 @@ a.row-title:hover { text-decoration: underline; text-underline-offset: 2px; }
   border-radius: var(--r2); background: var(--acc-soft); color: var(--acc);
 }
 
-/* point tiers */
+/* bounty tiers */
 .tier-layout { display: grid; grid-template-columns: 1.35fr 1fr; gap: var(--s4); align-items: start; }
 .tier-grid { grid-template-columns: minmax(0, 1fr); }
 .tier { padding: var(--s4); display: flex; flex-direction: column; gap: 10px; }
@@ -541,10 +526,6 @@ a.row-title:hover { text-decoration: underline; text-underline-offset: 2px; }
 .box .formula-part { font-size: var(--t3); padding: 7px 11px; }
 .box .label { margin-bottom: 2px; }
 
-/* standalone wave dot (outside .wave-node) */
-.mini-row > .wave-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--line); flex-shrink: 0; }
-.mini-row > .wave-dot.active { background: var(--ok); box-shadow: 0 0 0 3px var(--ok-bg); }
-.mini-row > .wave-dot.upcoming { border: 1px solid var(--ink-4); background: transparent; }
 
 /* ============================================================
    Navbar — announcement strip + refined bar

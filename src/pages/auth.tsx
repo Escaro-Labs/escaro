@@ -4,7 +4,7 @@ import { motion } from 'motion/react';
 import { ArrowRight, ShieldCheck } from 'lucide-react';
 import { useApp } from '../lib/store';
 import { Brand, EASE, Mark } from '../components/ui';
-import { PROGRAM } from '../lib/program';
+import { PLATFORM } from '../lib/platform';
 
 function AuthFrame({
   kicker, title, sub, children, foot,
@@ -59,7 +59,7 @@ export function ContributorLogin() {
     <AuthFrame
       kicker="Contributor"
       title="Sign in to apply"
-      sub={`Browse issues across the ${PROGRAM.full}, send proposals, and track points. This is a local preview profile.`}
+      sub={`Browse funded issues, send proposals, and collect a receipt for every bounty paid out on ${PLATFORM.chain}. This is a local preview profile.`}
       foot={<>Maintaining a repository? <Link to="/maintainer/login">Use the maintainer sign-in</Link>.</>}
     >
       <form className="auth-form" onSubmit={submit}>
@@ -91,7 +91,7 @@ export function MaintainerLogin() {
     <AuthFrame
       kicker="Maintainer"
       title="Maintainer sign-in"
-      sub={`A separate area from the contributor side. Submit a repository to the ${PROGRAM.full}, wait for review, and you get a dashboard for each accepted repository.`}
+      sub={`A separate area from the contributor side. Connect a repository, verify you maintain it, then fund issues with ${PLATFORM.asset} bounties from its dashboard.`}
       foot={<>Looking for issues instead? <Link to="/login">Contributor sign-in</Link>.</>}
     >
       <form className="auth-form" onSubmit={submit}>
@@ -104,7 +104,7 @@ export function MaintainerLogin() {
       </form>
       <div className="note auth-note">
         <ShieldCheck size={14} />
-        <span>Repositories are reviewed before a dashboard opens. Signing in here does not sign you in as a contributor.</span>
+        <span>Ownership is verified before a dashboard opens. Signing in here does not sign you in as a contributor.</span>
       </div>
     </AuthFrame>
   );

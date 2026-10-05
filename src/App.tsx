@@ -5,29 +5,29 @@ import {
 import { AnimatePresence, motion } from 'motion/react';
 import {
   ArrowRight, Compass, FolderGit2, GitPullRequest, LayoutGrid, ListChecks, Menu, Moon,
-  Settings, Sun, Trophy, Wrench, X,
+  Receipt, Settings, Sun, Wrench, X,
 } from 'lucide-react';
 import { Provider, useApp } from './lib/store';
-import { canOpenRepoDashboard, formatMoney, repoName, reposOwnedBy } from './lib/model';
-import { PROGRAM } from './lib/program';
+import { canOpenRepoDashboard, escrowedTotal, formatMoney, repoName, reposOwnedBy } from './lib/model';
+import { PLATFORM } from './lib/platform';
 import { Avatar, Brand, EASE } from './components/ui';
 import { GooeyNav } from './components/bits';
 import { Landing } from './pages/landing';
 import { Explore } from './pages/explore';
 import { IssuePage } from './pages/issue';
 import { ContributorLogin, MaintainerLogin } from './pages/auth';
-import { ContributorWork, ContributorPoints, ContributorSettings } from './pages/contributor';
+import { ContributorWork, ContributorReceipts, ContributorSettings } from './pages/contributor';
 import { MaintainerHome, MaintainerSubmit, RepoDashboard, RepoIssues, RepoSettings } from './pages/maintainer';
 
 /* ------------------------------------------------------------------ theme */
 
 function useTheme() {
   const [theme, setTheme] = useState(() => {
-    try { return localStorage.getItem('surge-theme') || 'dark'; } catch { return 'dark'; }
+    try { return localStorage.getItem('parallax-theme') || 'dark'; } catch { return 'dark'; }
   });
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
-    try { localStorage.setItem('surge-theme', theme); } catch { /* ignore */ }
+    try { localStorage.setItem('parallax-theme', theme); } catch { /* ignore */ }
   }, [theme]);
   return [theme, setTheme] as const;
 }
@@ -55,22 +55,26 @@ function ThemeToggle() {
 
 /* ------------------------------------------------------- public top-nav shell */
 
+// Routes remount the public shell on every navigation, so the dismissal lives
+// outside component state to survive the remount.
+let announceDismissed = false;
+
 function AnnounceBar() {
   const { state } = useApp();
-  const [open, setOpen] = useState(true);
-  const wave = state.waves.find(w => w.status === 'Active');
-  if (!open || !wave) return null;
+  const [open, setOpen] = useState(!announceDismissed);
+  if (!open) return null;
+  const dismiss = () => { announceDismissed = true; setOpen(false); };
   return (
     <div className="announce">
       <Link className="announce-in" to="/explore">
         <span className="announce-tag">New</span>
         <span className="announce-text">
-          Wave {wave.number} is open — ${formatMoney(wave.budget)} {PROGRAM.asset} across{' '}
-          {state.issues.length} scoped issues
+          ${formatMoney(escrowedTotal(state.issues, state.applications))} {PLATFORM.asset} in escrow across{' '}
+          {state.issues.length} funded issues
         </span>
         <ArrowRight size={12} />
       </Link>
-      <button className="announce-x" aria-label="Dismiss announcement" onClick={() => setOpen(false)}>
+      <button className="announce-x" aria-label="Dismiss announcement" onClick={dismiss}>
         <X size={13} />
       </button>
     </div>
@@ -121,7 +125,7 @@ function PublicShell({ children }: { children: ReactNode }) {
           <div className="navpill-nav"><GooeyNav items={nav} /></div>
           <div className="navpill-right">
             <ThemeToggle />
-            <Link className="btn sm" to="/maintainer/login">Submit your repo</Link>
+            <Link className="btn sm" to="/maintainer/login">List your repo</Link>
             {state.session.contributor ? (
               <Link className="btn sm navpill-cta" to="/me">
                 <Avatar name={state.session.contributor} />
@@ -154,7 +158,7 @@ function PublicShell({ children }: { children: ReactNode }) {
                     {n.label}
                   </NavLink>
                 ))}
-                <Link to="/maintainer/login">Submit your repo</Link>
+                <Link to="/maintainer/login">List your repo</Link>
               </div>
             </motion.nav>
           )}
@@ -269,7 +273,7 @@ function ContributorShell({ children }: { children: ReactNode }) {
         heading: 'Your work',
         items: [
           { to: '/me', label: 'Assignments', icon: GitPullRequest, end: true, count: active },
-          { to: '/me/points', label: 'Points', icon: Trophy },
+          { to: '/me/receipts', label: 'Receipts', icon: Receipt },
           { to: '/me/settings', label: 'Settings', icon: Settings },
         ],
       }]}
@@ -295,7 +299,7 @@ function MaintainerShell({ children }: { children: ReactNode }) {
         heading: 'Repositories',
         items: [
           { to: '/maintainer', label: 'Your repositories', icon: FolderGit2, end: true, count: mine.length },
-          { to: '/maintainer/submit', label: 'Submit a repo', icon: LayoutGrid },
+          { to: '/maintainer/submit', label: 'Connect a repo', icon: LayoutGrid },
         ],
       }]}
       footer={<Link className="btn ghost sm block" to="/">Leave maintainer area</Link>}
@@ -368,7 +372,7 @@ function Routed() {
       <Route path="/maintainer/login" element={<MaintainerLogin />} />
 
       <Route path="/me" element={<ContributorShell><ContributorWork /></ContributorShell>} />
-      <Route path="/me/points" element={<ContributorShell><ContributorPoints /></ContributorShell>} />
+      <Route path="/me/receipts" element={<ContributorShell><ContributorReceipts /></ContributorShell>} />
       <Route path="/me/settings" element={<ContributorShell><ContributorSettings /></ContributorShell>} />
 
       <Route path="/maintainer" element={<MaintainerShell><MaintainerHome /></MaintainerShell>} />

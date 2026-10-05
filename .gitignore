@@ -7,3 +7,5 @@ dist/
 *.local
 .final-snapshot/
 _history.py
+test-results/
+visual-check.png
