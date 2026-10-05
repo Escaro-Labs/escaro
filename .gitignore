@@ -9,3 +9,4 @@ dist/
 _history.py
 test-results/
 visual-check.png
+contracts/target/

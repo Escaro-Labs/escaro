@@ -1,0 +1,36 @@
+name: Scoped task
+description: A piece of work a contributor can pick up, with acceptance criteria.
+labels: ["task"]
+body:
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: What is wrong or missing today, and why it matters.
+    validations:
+      required: true
+  - type: textarea
+    id: criteria
+    attributes:
+      label: Acceptance criteria
+      description: One checkbox per criterion. The pull request is reviewed against these.
+      value: |
+        - [ ] 
+        - [ ] 
+    validations:
+      required: true
+  - type: dropdown
+    id: complexity
+    attributes:
+      label: Complexity
+      options:
+        - Trivial
+        - Medium
+        - High
+    validations:
+      required: true
+  - type: textarea
+    id: pointers
+    attributes:
+      label: Pointers
+      description: Files, functions or docs that are a good place to start.

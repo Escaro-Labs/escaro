@@ -38,3 +38,36 @@ jobs:
           name: smoke-failure
           path: test-results/
           if-no-files-found: ignore
+
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: contracts
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32v1-none
+          components: clippy, rustfmt
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: contracts
+
+      - name: Format
+        run: cargo fmt --all --check
+
+      - name: Lint
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Test
+        run: cargo test
+
+      - name: Install Stellar CLI
+        uses: stellar/stellar-cli@v23.1.4
+
+      - name: Build wasm
+        run: stellar contract build

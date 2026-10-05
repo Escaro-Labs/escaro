@@ -9,9 +9,10 @@ Every payout leaves a public receipt, so a contributor's record of shipped work 
 Two views of the same work: maintainers see a backlog that gets done, contributors see money that
 is already there.
 
-> **Status: preview.** The full product flow runs in the browser with local data. The escrow
-> contract, wallet connection and GitHub integration are on the [roadmap](#roadmap) and not
-> connected yet. No real funds move.
+> **Status: preview.** The full product flow runs in the browser with local data. The Soroban
+> escrow contract is written and tested in [`contracts/`](contracts/) but not yet deployed or
+> wired to the app; wallet connection and GitHub integration are on the [roadmap](#roadmap).
+> No real funds move.
 
 ## How it differs from a funding round
 
@@ -87,6 +88,7 @@ maintainer are separate sessions; signing into one never opens the other.
 | `src/components/ui.tsx` | Shared primitives: avatar, modal, chips, segmented control |
 | `src/components/bits/` | Motion and WebGL effects ported from React Bits |
 | `scripts/smoke-test.mjs` | End-to-end test of every flow at five viewport widths |
+| `contracts/escrow/` | Soroban escrow contract (Rust): fund, assign, release, refund |
 
 ## Checks
 
@@ -95,16 +97,20 @@ npm run build                                 # typecheck + production build
 npm run test:smoke -- http://localhost:3000   # with the dev server running
 ```
 
+For the contract, see [`contracts/README.md`](contracts/README.md) — `cargo test` from
+`contracts/`.
+
 The smoke test covers the public explore surface, search, tabs and filters, contributor apply and
 persistence, the separate maintainer sign-in, the connect-then-verify gate, dashboards scoped by
 owner, assignment, posting a funded issue, payout address validation, merge-and-release writing a
 receipt, theme persistence, the mobile drawer, and horizontal overflow across 15 routes at five
-widths. CI runs the build and the smoke test on every pull request.
+widths. CI runs the web build, the smoke test, and the contract's format, lint, tests and wasm
+build on every pull request.
 
 ## Roadmap
 
-1. **Escrow contract (Soroban).** `fund(issue, amount)`, `assign(issue, contributor)`,
-   `release(issue)` and `refund(issue)`, holding USDC per issue. Deployed to Stellar testnet first.
+1. **Escrow contract (Soroban).** ✅ Written and tested: `fund`, `assign`, `release` and
+   `refund`, holding USDC per issue. Next: deploy to Stellar testnet.
 2. **Receipts on-chain.** `release` emits an event with repository, issue, pull request and
    amount; the receipts page reads them back from the network.
 3. **Wallets.** Freighter for maintainers funding issues; passkey smart wallets so contributors
