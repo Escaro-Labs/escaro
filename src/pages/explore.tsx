@@ -2,9 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { ArrowUpRight, GitFork, Search, SlidersHorizontal, Star, X } from 'lucide-react';
-import { formatCount, pointsFor, relativeDate, repoName, type Complexity } from '../lib/model';
+import { formatCount, formatMoney, relativeDate, repoName, type Complexity } from '../lib/model';
 import { useApp } from '../lib/store';
-import { PROGRAM } from '../lib/program';
+import { PLATFORM } from '../lib/platform';
 import { Avatar, Chip, EASE, Empty, Item, LangDot, Page, Segmented, Stagger } from '../components/ui';
 
 type Tab = 'issues' | 'repos' | 'orgs';
@@ -15,7 +15,7 @@ const TABS = [
   { value: 'orgs' as const, label: 'Organizations' },
 ];
 
-const SORTS = ['Newest', 'Points', 'Title'] as const;
+const SORTS = ['Newest', 'Bounty', 'Title'] as const;
 const LEVELS: (Complexity | 'Any')[] = ['Any', 'Trivial', 'Medium', 'High'];
 
 export function Explore({ tab }: { tab: Tab }) {
@@ -38,7 +38,7 @@ export function Explore({ tab }: { tab: Tab }) {
     }
   }, [params, setParams]);
 
-  const accepted = useMemo(() => state.repos.filter(r => r.status === 'Accepted'), [state.repos]);
+  const accepted = useMemo(() => state.repos.filter(r => r.status === 'Verified'), [state.repos]);
   const languages = useMemo(
     () => ['Any', ...new Set(accepted.flatMap(r => r.languages))],
     [accepted],
@@ -54,7 +54,7 @@ export function Explore({ tab }: { tab: Tab }) {
       return `${issue.title} ${issue.id} ${repoName(repo)}`.toLowerCase().includes(needle);
     });
     return list.sort((a, b) =>
-      sort === 'Points' ? pointsFor(b.complexity) - pointsFor(a.complexity)
+      sort === 'Bounty' ? b.bounty - a.bounty
         : sort === 'Title' ? a.title.localeCompare(b.title)
           : b.created.localeCompare(a.created));
   }, [state.issues, accepted, level, lang, needle, sort]);
@@ -82,7 +82,7 @@ export function Explore({ tab }: { tab: Tab }) {
         <header className="explore-head">
           <div>
             <h1>Explore</h1>
-            <p className="muted">Open work across every repository accepted into the {PROGRAM.full}.</p>
+            <p className="muted">Funded issues across every verified repository. Each bounty is escrowed in {PLATFORM.asset} and paid on merge.</p>
           </div>
         </header>
 
@@ -178,7 +178,7 @@ export function Explore({ tab }: { tab: Tab }) {
                       <span className="row-sub">{repoName(repo)}</span>
                     </span>
                     <Chip className="hide-sm">{issue.complexity}</Chip>
-                    <Chip className="solid num">{pointsFor(issue.complexity)}</Chip>
+                    <Chip className="solid num">${formatMoney(issue.bounty)}</Chip>
                     <ArrowUpRight size={14} className="dim hide-sm" />
                   </Link>
                 </Item>

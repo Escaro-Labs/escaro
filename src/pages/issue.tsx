@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
-import { ArrowUpRight, Check, GitPullRequest } from 'lucide-react';
-import { applicantName, isOwnApplication, pointsFor, repoName } from '../lib/model';
+import { ArrowUpRight, Check, GitPullRequest, Lock } from 'lucide-react';
+import { applicantName, formatMoney, isOwnApplication, repoName, statusTone } from '../lib/model';
+import { PLATFORM } from '../lib/platform';
 import { useApp } from '../lib/store';
 import { Avatar, Chip, Crumbs, Empty, ModalHost, Page } from '../components/ui';
 
@@ -17,12 +18,12 @@ export function IssuePage() {
   if (!issue) return <Navigate to="/explore" replace />;
 
   const repo = state.repos.find(r => r.id === issue.repoId)!;
-  const wave = state.waves.find(w => w.id === issue.waveId)!;
   const me = state.session.contributor;
   const proposals = state.applications.filter(a => a.issueId === issue.id);
   const mine = proposals.find(isOwnApplication);
-  const taken = proposals.find(a => ['Assigned', 'PR submitted', 'Accepted'].includes(a.status));
-  const canApply = !mine && !taken && wave.status === 'Active';
+  const taken = proposals.find(a => ['Assigned', 'PR submitted', 'Paid'].includes(a.status));
+  const paid = taken?.status === 'Paid';
+  const canApply = !mine && !taken;
 
   const submit = () => {
     if (message.trim().length < 30) { setErr('Add at least 30 characters so the maintainer can judge your plan.'); return; }
@@ -43,8 +44,8 @@ export function IssuePage() {
 
   const label = mine
     ? (mine.status === 'Rejected' ? 'Not selected' : `Proposal ${mine.status.toLowerCase()}`)
-    : taken ? 'Already assigned'
-      : wave.status === 'Active' ? 'Apply to this issue' : 'Applications closed';
+    : paid ? 'Bounty paid'
+      : taken ? 'Already assigned' : 'Apply to this issue';
 
   return (
     <Page className="detail">
@@ -55,9 +56,9 @@ export function IssuePage() {
           <article>
             <header className="detail-head">
               <div className="row wrap" style={{ gap: 6 }}>
-                <Chip className="solid num">{pointsFor(issue.complexity)} pts</Chip>
+                <Chip className="solid num">${formatMoney(issue.bounty)} {PLATFORM.asset}</Chip>
                 <Chip>{issue.complexity}</Chip>
-                <Chip tone={wave.status === 'Active' ? 'ok' : ''}>Wave {wave.number}</Chip>
+                <Chip tone={paid ? '' : 'ok'}>{paid ? 'Paid out' : 'Escrowed'}</Chip>
               </div>
               <h1>{issue.title}</h1>
               <div className="row dim" style={{ gap: 7, fontSize: 'var(--t3)' }}>
@@ -91,7 +92,7 @@ export function IssuePage() {
                         <strong className="row-title">{applicantName(p, me ?? 'You')}</strong>
                         {isOwnApplication(p) && <Chip>You</Chip>}
                         <span className="spacer" />
-                        <Chip tone={p.status === 'Accepted' ? 'ok' : p.status === 'Rejected' ? 'bad' : p.status === 'Applied' ? '' : 'warn'}>
+                        <Chip tone={statusTone(p.status)}>
                           {p.status}
                         </Chip>
                       </div>
@@ -105,10 +106,10 @@ export function IssuePage() {
 
           <aside className="detail-side">
             <div className="card side-card">
-              <p className="label">Points</p>
-              <div className="side-row"><span className="muted">Base</span><span className="num">100</span></div>
-              <div className="side-row"><span className="muted">Complexity</span><span className="num">+{pointsFor(issue.complexity) - 100}</span></div>
-              <div className="side-row total"><span>Total</span><span className="num">{pointsFor(issue.complexity)}</span></div>
+              <p className="label">Bounty</p>
+              <div className="side-row"><span className="muted">Escrow</span><span className="row" style={{ gap: 5 }}><Lock size={11} />{paid ? 'Released' : 'Held'}</span></div>
+              <div className="side-row"><span className="muted">Network</span><span>{PLATFORM.chain} {PLATFORM.network}</span></div>
+              <div className="side-row total"><span>Paid on merge</span><span className="num">${formatMoney(issue.bounty)}</span></div>
             </div>
             <div className="card side-card">
               <p className="label">Repository</p>

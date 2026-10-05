@@ -1,0 +1,17 @@
+[package]
+name = "parallax-escrow"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Per-issue bounty escrow for Parallax on Stellar"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+doctest = false
+
+[dependencies]
+soroban-sdk = { workspace = true }
+
+[dev-dependencies]
+soroban-sdk = { workspace = true, features = ["testutils"] }

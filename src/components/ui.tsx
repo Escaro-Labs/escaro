@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { X } from 'lucide-react';
-import { LANG_COLOR, orgAvatar } from '../lib/program';
+import { LANG_COLOR, orgAvatar } from '../lib/platform';
 
 export const EASE = [0.2, 0.8, 0.2, 1] as const;
 
@@ -50,13 +50,13 @@ export function Item({ children, className = '' }: { children: ReactNode; classN
 export function Mark({ size = 13 }: { size?: number }) {
   return (
     <svg viewBox="0 0 24 24" width={size} height={size} fill="none" aria-hidden="true">
-      <path d="M5 15.5 12 4l7 11.5" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M8.5 20h7" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+      <path d="M5 19 11 5" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+      <path d="M13 19 19 5" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" opacity=".55" />
     </svg>
   );
 }
 
-export function Brand({ to = '/', label = 'Surge' }: { to?: string; label?: string }) {
+export function Brand({ to = '/', label = 'Parallax' }: { to?: string; label?: string }) {
   return (
     <Link to={to} className="brand" aria-label={`${label} home`}>
       <span className="brand-mark"><Mark /></span>

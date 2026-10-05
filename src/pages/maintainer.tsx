@@ -2,17 +2,18 @@ import { useState, type FormEvent } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import {
-  ArrowRight, Check, Clock, Plus, ShieldCheck, Star, X,
+  ArrowRight, Check, Clock, GitPullRequest, Plus, ShieldCheck, Star, X,
 } from 'lucide-react';
 import {
-  applicantName, dateLabel, isOwnApplication, pointsFor, repoName, reposOwnedBy,
-  type Application, type Repo,
+  applicantName, dateLabel, escrowedTotal, formatMoney, isOwnApplication, nextIssueId, repoName,
+  reposOwnedBy, statusTone, suggestedBounty, type Application, type Complexity, type Issue, type Repo,
 } from '../lib/model';
 import { useApp } from '../lib/store';
-import { PROGRAM } from '../lib/program';
+import { PLATFORM } from '../lib/platform';
 import { Avatar, Chip, EASE, Empty, Item, ModalHost, Page, PageHead, Stagger } from '../components/ui';
 
-const STATUS_TONE: Record<Repo['status'], string> = { Pending: 'warn', Accepted: 'ok', Rejected: 'bad' };
+const STATUS_TONE: Record<Repo['status'], string> = { Pending: 'warn', Verified: 'ok', Rejected: 'bad' };
+const LEVELS: Complexity[] = ['Trivial', 'Medium', 'High'];
 
 /* --------------------------------------------------------- repository list */
 
@@ -21,33 +22,33 @@ export function MaintainerHome() {
   const me = state.session.maintainer!;
   const mine = reposOwnedBy(state.repos, me);
 
-  // No backend reviewer exists in the preview, so review is an explicit action.
-  const review = (id: string, decision: 'Accepted' | 'Rejected') => {
+  // The preview cannot check GitHub permissions, so verification is an explicit action.
+  const review = (id: string, decision: 'Verified' | 'Rejected') => {
     setState(s => ({
       ...s,
       repos: s.repos.map(r => r.id === id ? {
         ...r,
         status: decision,
-        reviewNote: decision === 'Accepted'
-          ? 'Approved for the program.'
-          : 'Not accepted. Scope the README and resubmit.',
+        reviewNote: decision === 'Verified'
+          ? 'Maintainer access confirmed.'
+          : 'Could not confirm maintainer access to this repository.',
       } : r),
     }));
-    notify(decision === 'Accepted' ? 'Repository accepted. Its dashboard is now open.' : 'Repository rejected.');
+    notify(decision === 'Verified' ? 'Repository verified. Its dashboard is now open.' : 'Verification failed.');
   };
 
   if (!mine.length) {
     return (
       <Page>
-        <PageHead title="Your repositories" sub="Submit a repository to open its dashboard." />
+        <PageHead title="Your repositories" sub="Connect a repository to start funding its issues." />
         <div className="gate">
           <span className="gate-icon"><Plus size={20} /></span>
-          <h2>Nothing submitted yet</h2>
+          <h2>No repositories connected</h2>
           <p className="muted">
-            A repository has to be submitted and accepted into the program before its dashboard opens.
-            Review usually takes one wave cycle.
+            Connect a repository and verify you maintain it. Its dashboard opens once verification passes,
+            and from there you can post issues with an escrowed bounty.
           </p>
-          <Link className="btn primary lg" to="/maintainer/submit">Submit a repository<ArrowRight size={14} /></Link>
+          <Link className="btn primary lg" to="/maintainer/submit">Connect a repository<ArrowRight size={14} /></Link>
         </div>
       </Page>
     );
@@ -57,12 +58,12 @@ export function MaintainerHome() {
     <Page>
       <PageHead
         title="Your repositories"
-        sub="Each accepted repository gets its own dashboard."
-        action={<Link className="btn primary sm" to="/maintainer/submit"><Plus size={14} />Submit</Link>}
+        sub="Each verified repository gets its own dashboard."
+        action={<Link className="btn primary sm" to="/maintainer/submit"><Plus size={14} />Connect</Link>}
       />
       <Stagger className="grid c2">
         {mine.map(repo => {
-          const gated = repo.status !== 'Accepted';
+          const gated = repo.status !== 'Verified';
           const issues = state.issues.filter(i => i.repoId === repo.id).length;
           return (
             <Item key={repo.id} className={gated ? 'card repo-card gated' : 'card repo-card'}>
@@ -78,7 +79,7 @@ export function MaintainerHome() {
 
               <p className="muted repo-desc">{repo.description}</p>
 
-              {repo.status === 'Accepted' ? (
+              {repo.status === 'Verified' ? (
                 <>
                   <div className="row repo-stats">
                     <span className="dim"><span className="num">{issues}</span> issues</span>
@@ -94,16 +95,16 @@ export function MaintainerHome() {
                     {repo.status === 'Pending' ? <Clock size={14} /> : <X size={14} />}
                     <span>
                       {repo.status === 'Pending'
-                        ? 'In review. The dashboard opens once this repository is accepted.'
-                        : repo.reviewNote ?? 'Not accepted into the program.'}
+                        ? 'Verifying maintainer access. The dashboard opens once this passes.'
+                        : repo.reviewNote ?? 'Could not confirm maintainer access.'}
                     </span>
                   </div>
                   <div className="row" style={{ gap: 6 }}>
-                    <button className="btn sm" onClick={() => review(repo.id, 'Accepted')}>
-                      <ShieldCheck size={13} />Simulate acceptance
+                    <button className="btn sm" onClick={() => review(repo.id, 'Verified')}>
+                      <ShieldCheck size={13} />Simulate verification
                     </button>
                     {repo.status === 'Pending' && (
-                      <button className="btn sm ghost" onClick={() => review(repo.id, 'Rejected')}>Reject</button>
+                      <button className="btn sm ghost" onClick={() => review(repo.id, 'Rejected')}>Simulate failure</button>
                     )}
                   </div>
                 </>
@@ -113,7 +114,7 @@ export function MaintainerHome() {
         })}
       </Stagger>
       <p className="hint gate-hint">
-        Review is simulated locally — there is no program reviewer in this preview.
+        Verification is simulated locally — the preview has no GitHub connection to check permissions.
       </p>
     </Page>
   );
@@ -135,13 +136,13 @@ export function MaintainerSubmit() {
     if (!match) { setErr('Enter owner/repository, or a GitHub repository URL.'); return; }
     const [, org, name] = match;
     if (state.repos.some(r => r.org.toLowerCase() === org.toLowerCase() && r.name.toLowerCase() === name.toLowerCase())) {
-      setErr('That repository is already in the program.');
+      setErr('That repository is already connected.');
       return;
     }
     const repo: Repo = {
       id: crypto.randomUUID(),
       org, name,
-      description: desc.trim() || 'Submitted for program review.',
+      description: desc.trim() || 'Connected for funded issues.',
       languages: ['TypeScript'],
       stars: 0, forks: 0,
       ownerId: me,
@@ -149,13 +150,13 @@ export function MaintainerSubmit() {
       submitted: new Date().toISOString().slice(0, 10),
     };
     setState(s => ({ ...s, repos: [repo, ...s.repos] }));
-    notify('Submitted for review.');
+    notify('Repository connected. Verifying maintainer access.');
     navigate('/maintainer');
   };
 
   return (
     <Page>
-      <PageHead title="Submit a repository" sub={`Reviewed before it joins the ${PROGRAM.full}. You get a dashboard once it is accepted.`} />
+      <PageHead title="Connect a repository" sub={`Verify you maintain it, then fund its issues with ${PLATFORM.asset} bounties held in escrow on ${PLATFORM.chain}.`} />
       <form className="card submit-form" onSubmit={submit}>
         <label className="field">
           <span>GitHub repository</span>
@@ -166,18 +167,18 @@ export function MaintainerSubmit() {
         <label className="field">
           <span>What does it do?</span>
           <textarea className="textarea" rows={4} maxLength={500} aria-label="What does it do?"
-            placeholder="One or two sentences a reviewer can act on."
+            placeholder="One or two sentences contributors will see."
             value={desc} onChange={e => setDesc(e.target.value)} />
         </label>
         {err && <p className="err" role="alert">{err}</p>}
         <div className="row" style={{ gap: 8 }}>
-          <button className="btn primary" type="submit">Submit for review</button>
+          <button className="btn primary" type="submit">Connect repository</button>
           <Link className="btn ghost" to="/maintainer">Cancel</Link>
         </div>
       </form>
       <div className="note submit-note">
         <ShieldCheck size={14} />
-        <span>Submission does not open a dashboard. The repository has to be accepted first.</span>
+        <span>Connecting does not open a dashboard. Maintainer access has to be verified first.</span>
       </div>
     </Page>
   );
@@ -201,7 +202,8 @@ export function RepoDashboard() {
   const proposals = state.applications.filter(a => ids.has(a.issueId));
   const waiting = proposals.filter(a => a.status === 'Applied').length;
   const assigned = proposals.filter(a => ['Assigned', 'PR submitted'].includes(a.status)).length;
-  const done = proposals.filter(a => a.status === 'Accepted').length;
+  const escrowed = escrowedTotal(issues, proposals);
+  const paidOut = state.receipts.filter(r => r.repoId === repo.id).reduce((sum, r) => sum + r.amount, 0);
 
   return (
     <Page>
@@ -213,10 +215,10 @@ export function RepoDashboard() {
 
       <Stagger className="grid c4">
         {[
-          { label: 'Issues', value: issues.length, note: 'Posted to a wave' },
+          { label: 'In escrow', value: `$${formatMoney(escrowed)}`, note: `${issues.length} funded ${issues.length === 1 ? 'issue' : 'issues'}` },
           { label: 'Awaiting review', value: waiting, note: 'Proposals to triage' },
           { label: 'In progress', value: assigned, note: 'Assigned contributors' },
-          { label: 'Accepted', value: done, note: 'Completed this cycle' },
+          { label: 'Paid out', value: `$${formatMoney(paidOut)}`, note: 'Released on merge' },
         ].map(s => (
           <Item key={s.label} className="card stat">
             <p className="label">{s.label}</p>
@@ -262,6 +264,7 @@ export function RepoIssues() {
   const { state, setState, notify } = useApp();
   const repo = useRepo();
   const [open, setOpen] = useState<string | null>(null);
+  const [posting, setPosting] = useState(false);
   if (!repo) return <Navigate to="/maintainer" replace />;
 
   const issues = state.issues.filter(i => i.repoId === repo.id);
@@ -287,14 +290,39 @@ export function RepoIssues() {
     notify('Proposal declined.');
   };
 
+  // Merging releases the escrowed bounty to the assignee and writes their receipt.
+  const release = (issue: Issue, target: Application) => {
+    const contributor = applicantName(target, state.session.contributor ?? 'You');
+    setState(s => ({
+      ...s,
+      applications: s.applications.map(a =>
+        a.issueId === target.issueId && a.applicant === target.applicant ? { ...a, status: 'Paid' } : a),
+      receipts: [{
+        id: `rcpt_${crypto.randomUUID().slice(0, 8)}`,
+        issueId: issue.id,
+        repoId: issue.repoId,
+        contributor,
+        address: isOwnApplication(target) ? s.payoutAddress : null,
+        amount: issue.bounty,
+        pr: target.pr ?? '',
+        paidAt: new Date().toISOString().slice(0, 10),
+      }, ...s.receipts],
+    }));
+    notify(`Merged. $${formatMoney(issue.bounty)} ${PLATFORM.asset} released to ${contributor}.`);
+  };
+
   return (
     <Page>
-      <PageHead title="Issues & proposals" sub={`Every issue posted by ${repoName(repo)}.`} />
+      <PageHead
+        title="Issues & proposals"
+        sub={`Every funded issue on ${repoName(repo)}.`}
+        action={<button className="btn primary sm" onClick={() => setPosting(true)}><Plus size={14} />Post an issue</button>}
+      />
       {issues.length ? (
         <Stagger className="col" >
           {issues.map(issue => {
             const proposals = proposalsFor(issue.id);
-            const chosen = proposals.find(p => ['Assigned', 'PR submitted', 'Accepted'].includes(p.status));
+            const chosen = proposals.find(p => ['Assigned', 'PR submitted', 'Paid'].includes(p.status));
             const expanded = open === issue.id;
             return (
               <Item key={issue.id} className="card issue-block">
@@ -308,9 +336,9 @@ export function RepoIssues() {
                         proposals.length ? `${proposals.length} ${proposals.length === 1 ? 'proposal' : 'proposals'}` : 'No proposals yet'}
                     </span>
                   </span>
-                  <Chip className="num">{pointsFor(issue.complexity)}</Chip>
+                  <Chip className="num">${formatMoney(issue.bounty)}</Chip>
                   {chosen
-                    ? <Chip tone={chosen.status === 'Accepted' ? 'ok' : 'warn'}>{chosen.status}</Chip>
+                    ? <Chip tone={statusTone(chosen.status)}>{chosen.status}</Chip>
                     : proposals.length > 0 && <Chip className="solid num">{proposals.length}</Chip>}
                 </button>
 
@@ -332,7 +360,7 @@ export function RepoIssues() {
                               <strong className="row-title">{applicantName(p, 'You')}</strong>
                               {isOwnApplication(p) && <Chip>You</Chip>}
                               <span className="spacer" />
-                              <Chip tone={p.status === 'Accepted' ? 'ok' : p.status === 'Rejected' ? 'bad' : p.status === 'Applied' ? '' : 'warn'}>
+                              <Chip tone={statusTone(p.status)}>
                                 {p.status}
                               </Chip>
                             </div>
@@ -345,15 +373,15 @@ export function RepoIssues() {
                                 <button className="btn ghost xs" onClick={() => decline(p)}>Decline</button>
                               </div>
                             )}
+                            {p.pr && (
+                              <a className="row side-link" href={p.pr} target="_blank" rel="noreferrer">
+                                <GitPullRequest size={13} />{p.pr.replace('https://github.com/', '')}
+                              </a>
+                            )}
                             {p.status === 'PR submitted' && (
-                              <button className="btn primary xs" onClick={() => {
-                                setState(s => ({
-                                  ...s,
-                                  applications: s.applications.map(a =>
-                                    a.issueId === p.issueId && a.applicant === p.applicant ? { ...a, status: 'Accepted' } : a),
-                                }));
-                                notify('Contribution accepted. Points recorded.');
-                              }}><Check size={12} />Accept work</button>
+                              <button className="btn primary xs" onClick={() => release(issue, p)}>
+                                <Check size={12} />Merge &amp; release ${formatMoney(issue.bounty)}
+                              </button>
                             )}
                           </div>
                         )) : <p className="hint">No proposals on this issue yet.</p>}
@@ -365,7 +393,18 @@ export function RepoIssues() {
             );
           })}
         </Stagger>
-      ) : <Empty title="No issues yet">Issues posted for this repository appear here.</Empty>}
+      ) : <Empty title="No issues yet">Post an issue with a bounty and it appears here and on Explore.</Empty>}
+
+      <ModalHost open={posting} title="Post a funded issue" onClose={() => setPosting(false)}>
+        <PostIssueForm
+          repo={repo}
+          onDone={issue => {
+            setState(s => ({ ...s, issues: [{ ...issue, id: nextIssueId(s.issues) }, ...s.issues] }));
+            setPosting(false);
+            notify(`Issue posted. $${formatMoney(issue.bounty)} ${PLATFORM.asset} set aside in escrow.`);
+          }}
+        />
+      </ModalHost>
     </Page>
   );
 }
@@ -383,8 +422,8 @@ export function RepoSettings() {
       <div className="card submit-form">
         <div className="row">
           <span className="col" style={{ gap: 2 }}>
-            <strong className="row-title">Program status</strong>
-            <span className="row-sub">Submitted {repo.submitted ? dateLabel(repo.submitted) : 'with the program'}</span>
+            <strong className="row-title">Verification</strong>
+            <span className="row-sub">Connected {repo.submitted ? dateLabel(repo.submitted) : 'at launch'}</span>
           </span>
           <span className="spacer" />
           <Chip tone={STATUS_TONE[repo.status]}>{repo.status}</Chip>
@@ -392,24 +431,105 @@ export function RepoSettings() {
         <hr className="divider" />
         <div className="row">
           <span className="col" style={{ gap: 2 }}>
-            <strong className="row-title">Withdraw from the program</strong>
-            <span className="row-sub">Removes the repository and closes its dashboard.</span>
+            <strong className="row-title">Disconnect repository</strong>
+            <span className="row-sub">Removes the repository, its unpaid issues, and closes its dashboard.</span>
           </span>
           <span className="spacer" />
-          <button className="btn sm danger" onClick={() => setConfirm(true)}>Withdraw</button>
+          <button className="btn sm danger" onClick={() => setConfirm(true)}>Disconnect</button>
         </div>
       </div>
 
-      <ModalHost open={confirm} title="Withdraw this repository?" onClose={() => setConfirm(false)}>
-        <p>{repoName(repo)} will leave the program and its dashboard will close.</p>
+      <ModalHost open={confirm} title="Disconnect this repository?" onClose={() => setConfirm(false)}>
+        <p>{repoName(repo)} will be removed, its unpaid bounties returned from escrow, and its dashboard closed.</p>
         <button className="btn primary block" onClick={() => {
-          setState(s => ({ ...s, repos: s.repos.filter(r => r.id !== repo.id) }));
+          setState(s => {
+            const gone = new Set(s.issues.filter(i => i.repoId === repo.id).map(i => i.id));
+            return {
+              ...s,
+              repos: s.repos.filter(r => r.id !== repo.id),
+              issues: s.issues.filter(i => !gone.has(i.id)),
+              applications: s.applications.filter(a => !gone.has(a.issueId)),
+            };
+          });
           setConfirm(false);
-          notify('Repository withdrawn.');
+          notify('Repository disconnected.');
           navigate('/maintainer');
-        }}>Withdraw repository</button>
+        }}>Disconnect repository</button>
       </ModalHost>
     </Page>
   );
 }
 
+
+/* ------------------------------------------------------------- post an issue */
+
+function PostIssueForm({ repo, onDone }: { repo: Repo; onDone: (issue: Issue) => void }) {
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [criteria, setCriteria] = useState('');
+  const [complexity, setComplexity] = useState<Complexity>('Medium');
+  const [bounty, setBounty] = useState(String(suggestedBounty('Medium')));
+  const [err, setErr] = useState('');
+
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    const amount = Number(bounty);
+    const lines = criteria.split('\n').map(l => l.trim()).filter(Boolean);
+    if (title.trim().length < 8) { setErr('Give the issue a title of at least 8 characters.'); return; }
+    if (!lines.length) { setErr('Add at least one acceptance criterion, one per line.'); return; }
+    if (!Number.isInteger(amount) || amount < 10) { setErr(`Set a bounty of at least 10 ${PLATFORM.asset}.`); return; }
+    onDone({
+      id: '',
+      repoId: repo.id,
+      title: title.trim(),
+      description: description.trim() || title.trim(),
+      criteria: lines,
+      complexity,
+      bounty: amount,
+      created: new Date().toISOString().slice(0, 10),
+    });
+  };
+
+  return (
+    <form className="col" style={{ gap: 'var(--s3)' }} onSubmit={submit}>
+      <label className="field">
+        <span>Title</span>
+        <input className="input" aria-label="Issue title" autoFocus maxLength={120}
+          value={title} onChange={e => { setTitle(e.target.value); setErr(''); }} />
+      </label>
+      <label className="field">
+        <span>Description</span>
+        <textarea className="textarea" rows={3} aria-label="Issue description" maxLength={1000}
+          value={description} onChange={e => setDescription(e.target.value)} />
+      </label>
+      <label className="field">
+        <span>Acceptance criteria</span>
+        <textarea className="textarea" rows={3} aria-label="Acceptance criteria"
+          placeholder="One criterion per line" value={criteria}
+          onChange={e => { setCriteria(e.target.value); setErr(''); }} />
+      </label>
+      <div className="row" style={{ gap: 8 }}>
+        <label className="field" style={{ flex: 1 }}>
+          <span>Complexity</span>
+          <select className="select" aria-label="Issue complexity" value={complexity}
+            onChange={e => {
+              const next = e.target.value as Complexity;
+              setComplexity(next);
+              setBounty(String(suggestedBounty(next)));
+            }}>
+            {LEVELS.map(l => <option key={l}>{l}</option>)}
+          </select>
+        </label>
+        <label className="field" style={{ flex: 1 }}>
+          <span>Bounty ({PLATFORM.asset})</span>
+          <input className="input num" aria-label="Bounty" inputMode="numeric"
+            value={bounty} onChange={e => { setBounty(e.target.value.replace(/\D/g, '')); setErr(''); }} />
+        </label>
+      </div>
+      {err
+        ? <p className="err" role="alert">{err}</p>
+        : <p className="hint">The bounty is held in escrow when you post and released to the assignee on merge.</p>}
+      <button className="btn primary block" type="submit">Post and fund issue</button>
+    </form>
+  );
+}

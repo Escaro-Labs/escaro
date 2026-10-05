@@ -1,122 +1,141 @@
-# Surge
+# Parallax
 
-A local preview of the **Arc Ecosystem Program** — a scoped open-source contribution program.
-Maintainers submit repositories for review; accepted repositories get their own dashboard where
-the maintainer posts issues and picks one contributor per issue. Contributors browse, apply with
-a plan, and earn points that split the wave pool in USDC.
+**Per-issue bounties for open-source work, escrowed and settled on Stellar.**
 
-The ecosystem is defined in one place: [`src/program.ts`](src/program.ts) holds the name, chain,
-and reward asset. Swapping programs is that file plus the repository fixtures in `src/model.ts`.
+Maintainers put a fixed USDC bounty on a single issue. The money is locked in escrow on Stellar
+when the issue is posted and released to the contributor the moment their pull request merges.
+Every payout leaves a public receipt, so a contributor's record of shipped work travels with them.
+
+Two views of the same work: maintainers see a backlog that gets done, contributors see money that
+is already there.
+
+> **Status: preview.** The full product flow runs in the browser with local data. The Soroban
+> escrow contract is written and tested in [`contracts/`](contracts/) but not yet deployed or
+> wired to the app; wallet connection and GitHub integration are on the [roadmap](#roadmap).
+> No real funds move.
+
+## How it differs from a funding round
+
+| | Funding rounds | Parallax |
+| --- | --- | --- |
+| Unit of funding | A pool for a time window | One issue |
+| Price | Points converted to a share of the pool later | Fixed bounty, known before you apply |
+| When money is committed | When the round is funded | When the issue is posted, in escrow |
+| When you are paid | When the round closes | When your pull request merges |
+| Record of work | Platform history | A public receipt per payout |
+
+Parallax can sit alongside grant programs. A project in a funding round can still fund an urgent
+issue directly.
 
 ## Run
 
-```powershell
-npm.cmd install
-npm.cmd run dev
+Requires Node.js 22 or newer.
+
+```bash
+npm install
+npm run dev     # http://localhost:3000
 ```
 
 ## Surfaces
 
-Two clearly separate kinds of screen:
-
-**Public** — top nav, centred content, no dashboard chrome.
+**Public** — top nav, centred content.
 
 | Route | |
 | --- | --- |
 | `/` | Landing |
-| `/explore`, `/explore/repos`, `/explore/orgs` | Browse issues, repositories, organizations |
-| `/issue/:id` | Issue detail and proposals |
+| `/explore`, `/explore/repos`, `/explore/orgs` | Browse funded issues, repositories, organizations |
+| `/issue/:id` | Issue detail, bounty, escrow state and proposals |
 
 **Workspaces** — fixed left rail, scoped to one role or one repository.
 
 | Route | |
 | --- | --- |
 | `/login` | Contributor sign-in |
-| `/me`, `/me/points`, `/me/settings` | Contributor workspace |
+| `/me` | Assignments and pull request submission |
+| `/me/receipts` | Earned total and a receipt per paid bounty |
+| `/me/settings` | Display name and Stellar payout address |
 | `/maintainer/login` | **Separate** maintainer sign-in |
-| `/maintainer` | Your repositories and their review status |
-| `/maintainer/submit` | Submit a repository for review |
-| `/maintainer/repo/:id` | Dashboard for one accepted repository |
+| `/maintainer` | Your repositories and their verification status |
+| `/maintainer/submit` | Connect a repository |
+| `/maintainer/repo/:id` | Dashboard: escrowed and paid-out totals, proposals waiting |
+| `/maintainer/repo/:id/issues` | Post funded issues, assign, merge and release |
 
-## The maintainer gate
+## The flow
 
-The maintainer area is a separate session from the contributor one — signing in as a contributor
-never opens it, and vice versa. Beyond that:
+1. **Connect.** A maintainer signs in at `/maintainer/login` and connects a repository. It is
+   `Pending` until maintainer access is verified. **No dashboard opens before that.**
+2. **Fund.** From the repository dashboard, the maintainer posts an issue with acceptance criteria
+   and a bounty. Complexity suggests a starting price; the maintainer sets the final amount.
+3. **Apply.** Contributors send a short plan. The maintainer assigns one; the others are declined
+   automatically.
+4. **Build.** The assignee submits their pull request URL.
+5. **Merge and release.** The maintainer merges, the bounty is released to the contributor's
+   Stellar address, and a receipt is written.
 
-1. Sign in at `/maintainer/login`.
-2. Submit a repository. It enters `Pending`. **No dashboard opens.**
-3. The repository must be **accepted** before its dashboard exists. Review is simulated locally
-   because the preview has no backend reviewer.
-4. Each accepted repository gets its own dashboard — its issues, its proposals, its assignments.
+The maintainer gate is enforced on the route, not just in the UI: a direct URL to an unverified
+repository's dashboard, or to one owned by a different maintainer, redirects away. Contributor and
+maintainer are separate sessions; signing into one never opens the other.
 
-The gate is enforced on the route, not just in the UI: a direct URL to a pending repository's
-dashboard, or to a repository owned by a different maintainer, redirects away.
+## Project layout
 
-## Design
-
-Dark by default, with a violet accent. One neutral ramp plus one accent drives both themes, so
-light and dark come from the same tokens.
-
-**Sharp edges.** Every radius token is `0`, so buttons, cards, chips, inputs, modals and avatars
-are square. Only true dots (status indicators, language dots, aurora blobs) stay circular.
-
-The public navbar is a sticky bar with a dismissible announcement strip above it, a slash-separated
-link group, and a border that only appears once the page is scrolled. It collapses to a sheet below
-860px. Type runs on eight steps topping out at 30px, controls on
-three heights, spacing on a 4px grid. Inter for UI, JetBrains Mono for identifiers only.
-Motion is handled by `motion` on one easing curve.
-
-### React Bits
-
-Ported into `src/bits.tsx`, `src/bits-ui.tsx` and `src/bits-gl.tsx`:
-**GooeyNav** (SVG goo filter, blob tracks the active item, particles burst on click),
-**MoltenMetal** (WebGL fragment shader, domain-warped fbm; pauses off-screen and falls back to a
-CSS gradient without WebGL), **Lanyard** (spring-physics badge on a cord, draggable),
-**CardSwap**, **BounceCards**, **ProfileCard** (pointer tilt + holographic sheen),
-**InfiniteSpiral** and **LogoLoop**. The public navbar is a floating pill.
-
-React Bits (reactbits.dev) ships as copy-paste source rather than an npm dependency, so
-[`src/bits.tsx`](src/bits.tsx) holds its patterns re-implemented against these tokens:
-Aurora, DotGrid, GradientText, ShinyText, SplitText, CountUp, SpotlightCard, StarBorder, Magnet,
-ClickSpark, RotatingText, AnimatedContent, Marquee, GlareHover, TiltedCard and ScrollProgress.
-Every scroll-triggered component falls back to fully visible under `prefers-reduced-motion`, so
-content is never left hidden.
-
-The hero visual (`src/hero-visual.tsx`) is an animated contribution pipeline — proposal, assignment,
-pull request, acceptance, settlement — looping in DOM. It is **not** Rive: a `.riv` is a binary
-artboard exported from the Rive editor, so it has to be authored there. Drop one in and swap
-`HeroVisual` to render it; the pipeline stays as the fallback.
-
-The landing page lays these out on a six-column bento grid (`.bento` / `.box` with `w2`/`w3`/`w4`/`w6`
-spans) — large boxes with generous padding and display-scale figures, rather than uniform small cards.
+| Path | |
+| --- | --- |
+| `src/lib/platform.ts` | Product name, chain, network and asset. All copy reads from here. |
+| `src/lib/model.ts` | Types, pure helpers, the dashboard gate and seed data |
+| `src/lib/store.tsx` | App state in one React context, persisted to `localStorage` |
+| `src/App.tsx` | Routes, public shell and workspace shells |
+| `src/pages/` | One file per surface |
+| `src/components/ui.tsx` | Shared primitives: avatar, modal, chips, segmented control |
+| `src/components/bits/` | Motion and WebGL effects ported from React Bits |
+| `scripts/smoke-test.mjs` | End-to-end test of every flow at five viewport widths |
+| `contracts/escrow/` | Soroban escrow contract (Rust): fund, assign, release, refund |
 
 ## Checks
 
-With the dev server running:
-
-```powershell
-npm.cmd run build
-npm.cmd run test:smoke -- http://localhost:3000
+```bash
+npm run build                                 # typecheck + production build
+npm run test:smoke -- http://localhost:3000   # with the dev server running
 ```
 
-The smoke test covers the public explore surface, search/tabs/filters, the contributor apply and
-persistence path, the separate maintainer sign-in, the submit-then-review gate, per-repo dashboards
-scoped by owner and acceptance, proposal assignment, theme persistence, the mobile drawer, and
-horizontal overflow across 15 routes at five widths.
+For the contract, see [`contracts/README.md`](contracts/README.md) — `cargo test` from
+`contracts/`.
 
-## Repository images
+The smoke test covers the public explore surface, search, tabs and filters, contributor apply and
+persistence, the separate maintainer sign-in, the connect-then-verify gate, dashboards scoped by
+owner, assignment, posting a funded issue, payout address validation, merge-and-release writing a
+receipt, theme persistence, the mobile drawer, and horizontal overflow across 15 routes at five
+widths. CI runs the web build, the smoke test, and the contract's format, lint, tests and wasm
+build on every pull request.
 
-Organization avatars are the real ones, pulled from `https://github.com/<org>.png`. An org that
-does not resolve falls back to a letter tile, so a repository submitted under a made-up handle
-still renders correctly. Language dots use GitHub's own language colours.
+## Roadmap
 
-## Boundaries
+1. **Escrow contract (Soroban).** ✅ Written and tested: `fund`, `assign`, `release` and
+   `refund`, holding USDC per issue. Next: deploy to Stellar testnet.
+2. **Receipts on-chain.** `release` emits an event with repository, issue, pull request and
+   amount; the receipts page reads them back from the network.
+3. **Wallets.** Freighter for maintainers funding issues; passkey smart wallets so contributors
+   can get paid without a seed phrase. Payouts to accounts without a USDC trustline go out as
+   claimable balances.
+4. **GitHub app.** Real sign-in, repository ownership verification from GitHub permissions, and
+   release triggered by the merge itself.
 
-Everything is local. There is no GitHub OAuth or sync, no database, no wallet, and no USDC
-transfer. Repository review is simulated because the preview has no reviewer.
+See [CONTRIBUTING.md](CONTRIBUTING.md) to help build any of these.
 
-The seeded repositories are **real, existing open-source projects** used as reference examples so
-the directory renders with genuine avatars and plausible metadata — their star counts, topics and
-update times are fixtures, and their presence here implies no affiliation with, or participation
-in, any program. Sample contributors (`nadia.dev`, `kwame-o`, `lucia-m`, `tobi.k`) are fixtures so
-the maintainer flow has candidates to choose between.
+## Design
+
+Dark by default, with a violet accent. One neutral ramp plus one accent drives both themes. Every
+radius token is `0`, so controls and cards are square; only true dots stay circular. Inter for UI,
+JetBrains Mono for identifiers. Motion runs on one easing curve via `motion`, and every animated
+component falls back to fully visible under `prefers-reduced-motion`.
+
+## Data boundaries
+
+Everything in the preview is local to your browser. The seeded repositories are **real, existing
+open-source projects** used as reference examples so the directory renders with genuine avatars;
+their star counts, topics, issues and bounties are fixtures, and their presence here implies no
+affiliation with, or participation in, Parallax. Sample contributors (`nadia.dev`, `kwame-o`,
+`lucia-m`, `tobi.k`) are fictional.
+
+## License
+
+[MIT](LICENSE)

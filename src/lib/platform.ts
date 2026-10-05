@@ -1,16 +1,17 @@
 /**
- * Single source of truth for the ecosystem this preview runs on.
- * Swapping programs is an edit to this file plus the repository fixtures.
+ * Single source of truth for the product and the network it settles on.
+ * Copy that names the chain, network or asset reads from here.
  */
-export const PROGRAM = {
-  /** Short name used in headings and chips. */
-  name: 'Arc',
-  /** Full name used once, in the landing copy. */
-  full: 'Arc Ecosystem Program',
+export const PLATFORM = {
+  /** Product name. */
+  name: 'Parallax',
+  /** One-line positioning, used in the footer and auth screens. */
+  tagline: 'Per-issue bounties, escrowed and settled on Stellar',
   /** How the chain is described in prose. */
-  chain: 'Arc',
-  descriptor: 'the stablecoin-native L1',
-  /** Reward asset. */
+  chain: 'Stellar',
+  /** Network the escrow contract targets. The preview does not connect to it yet. */
+  network: 'testnet',
+  /** Bounty asset. */
   asset: 'USDC',
 } as const;
 

@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck and build
+        run: npm run build
+
+      - name: Install Chromium for the smoke test
+        run: npx playwright-core install --with-deps chromium
+
+      - name: Smoke test against the production build
+        run: |
+          npm run preview -- --port 3000 --strictPort &
+          for i in $(seq 1 30); do curl -sf http://localhost:3000 >/dev/null && break; sleep 1; done
+          npm run test:smoke -- http://localhost:3000
+
+      - name: Upload failure screenshot
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-failure
+          path: test-results/
+          if-no-files-found: ignore
+
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: contracts
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32v1-none
+          components: clippy, rustfmt
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: contracts
+
+      - name: Format
+        run: cargo fmt --all --check
+
+      - name: Lint
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Test
+        run: cargo test
+
+      # soroban-sdk 28 needs Stellar CLI 25.2+ to build. rust-cache keeps the binary between runs.
+      - name: Install Stellar CLI
+        run: |
+          if ! command -v stellar >/dev/null; then
+            sudo apt-get update && sudo apt-get install -y libdbus-1-dev libudev-dev
+            cargo install --locked stellar-cli
+          fi
+
+      - name: Build wasm
+        run: stellar contract build

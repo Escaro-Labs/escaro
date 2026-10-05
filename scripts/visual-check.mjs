@@ -4,7 +4,8 @@ const url = process.argv[2] ?? "http://127.0.0.1:3000/";
 const output = process.argv[3] ?? "visual-check.png";
 const width = Number(process.argv[4] ?? 1440);
 const height = Number(process.argv[5] ?? 1000);
-const executablePath = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
+const executablePath = process.env.CHROME_PATH
+  ?? (process.platform === "win32" ? "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe" : undefined);
 
 const browser = await chromium.launch({
   executablePath,
