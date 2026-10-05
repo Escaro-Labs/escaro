@@ -41,7 +41,7 @@ jobs:
 
   contract:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     defaults:
       run:
         working-directory: contracts
@@ -66,8 +66,13 @@ jobs:
       - name: Test
         run: cargo test
 
+      # soroban-sdk 28 needs Stellar CLI 25.2+ to build. rust-cache keeps the binary between runs.
       - name: Install Stellar CLI
-        uses: stellar/stellar-cli@v23.1.4
+        run: |
+          if ! command -v stellar >/dev/null; then
+            sudo apt-get update && sudo apt-get install -y libdbus-1-dev libudev-dev
+            cargo install --locked stellar-cli
+          fi
 
       - name: Build wasm
         run: stellar contract build
