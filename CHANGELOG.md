@@ -10,6 +10,10 @@ All notable changes to this project are documented here. The format follows
 - README with screenshots, architecture notes, Code of Conduct, security policy, pull request
   template, CODEOWNERS and Dependabot configuration.
 
+### Changed
+- Dependabot skips major npm and cargo upgrades and groups minor and patch updates into one
+  pull request per ecosystem.
+
 ### Fixed
 - Smoke test race when switching Explore tabs, which failed CI on fast runners.
 

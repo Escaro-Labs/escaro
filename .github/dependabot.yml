@@ -1,20 +1,33 @@
 version: 2
 updates:
+  # Major versions (TypeScript, Vite, React, ...) need code changes, so they are
+  # upgraded deliberately in their own pull request rather than by Dependabot.
+  # Minor and patch updates are grouped so they arrive as one pull request a week.
   - package-ecosystem: npm
     directory: /
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     groups:
-      dev-dependencies:
-        dependency-type: development
+      minor-and-patch:
+        update-types: ["minor", "patch"]
 
   - package-ecosystem: cargo
     directory: /contracts
     schedule:
       interval: weekly
     open-pull-requests-limit: 3
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    groups:
+      minor-and-patch:
+        update-types: ["minor", "patch"]
 
+  # Action major bumps rarely need code changes, so they stay enabled.
   - package-ecosystem: github-actions
     directory: /
     schedule:
