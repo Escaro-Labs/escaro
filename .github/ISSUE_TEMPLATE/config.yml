@@ -1,1 +1,8 @@
 blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/zeemscript/parallax/security/advisories/new
+    about: Please report security issues privately, not as a public issue.
+  - name: Contributing guide
+    url: https://github.com/zeemscript/parallax/blob/main/CONTRIBUTING.md
+    about: How to pick up an issue, set up the project, and open a pull request.

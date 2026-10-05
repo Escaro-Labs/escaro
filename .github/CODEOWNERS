@@ -1,0 +1,5 @@
+# Default reviewers for every change.
+*                   @zeemscript
+
+# The escrow contract moves funds; changes need an explicit review.
+/contracts/         @zeemscript
