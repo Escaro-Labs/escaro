@@ -1,16 +1,16 @@
 <div align="center">
 
-<img src="logo.png" alt="Parallax" width="160" />
+<img src="logo.png" alt="Escaro" width="160" />
 
-# Parallax
+# Escaro
 
 **Per-issue bounties for open-source work, escrowed and settled on Stellar.**
 
-[![CI](https://github.com/zeemscript/parallax/actions/workflows/ci.yml/badge.svg)](https://github.com/zeemscript/parallax/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-a855f7.svg)](LICENSE)
+[![CI](https://github.com/Escaro-Labs/escaro/actions/workflows/ci.yml/badge.svg)](https://github.com/Escaro-Labs/escaro/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-0ea5e9.svg)](LICENSE)
 [![Built on Stellar](https://img.shields.io/badge/built%20on-Stellar-0b0a14.svg)](https://stellar.org)
-[![Soroban](https://img.shields.io/badge/contract-Soroban-a855f7.svg)](contracts/)
-[![Good first issues](https://img.shields.io/github/issues/zeemscript/parallax/complexity%3A%20trivial?label=good%20first%20issues&color=22c55e)](https://github.com/zeemscript/parallax/issues?q=is%3Aissue+is%3Aopen+label%3A%22complexity%3A+trivial%22)
+[![Soroban](https://img.shields.io/badge/contract-Soroban-0ea5e9.svg)](contracts/)
+[![Good first issues](https://img.shields.io/github/issues/Escaro-Labs/escaro/complexity%3A%20trivial?label=good%20first%20issues&color=22c55e)](https://github.com/Escaro-Labs/escaro/issues?q=is%3Aissue+is%3Aopen+label%3A%22complexity%3A+trivial%22)
 
 [How it works](#how-it-works) · [Quick start](#quick-start) · [Architecture](docs/architecture.md) · [Contract](contracts/README.md) · [Roadmap](#roadmap) · [Contributing](CONTRIBUTING.md)
 
@@ -18,11 +18,31 @@
 
 <br />
 
-<img src="docs/assets/landing.png" alt="Parallax landing page" />
+<img src="docs/assets/landing.png" alt="Escaro landing page" />
+
+## Table of Contents
+
+- [How it uses Stellar](#how-it-uses-stellar)
+- [What it is](#what-it-is)
+- [Why per-issue escrow](#why-per-issue-escrow)
+- [How it works](#how-it-works)
+- [Features](#features)
+- [Prerequisites](#prerequisites)
+- [Quick start](#quick-start)
+- [Project structure](#project-structure)
+- [Testing](#testing)
+- [Roadmap](#roadmap)
+- [Security](#security)
+- [Contributing](#contributing)
+- [Data boundaries](#data-boundaries)
+
+## How it uses Stellar
+
+Escaro keeps bounties in **Soroban** escrow on **Stellar** and settles them in USDC on the Stellar network. Payouts are ordinary Stellar transactions, so every escrow, release, and refund is publicly auditable; wallet signing is delegated to Freighter and secret keys never touch the app.
 
 ## What it is
 
-Parallax lets a maintainer put a fixed **USDC** bounty on a single GitHub issue. The money is
+Escaro lets a maintainer put a fixed **USDC** bounty on a single GitHub issue. The money is
 locked in a **Soroban escrow contract** when the issue is posted and released to the contributor
 the moment their pull request merges. Every payout emits a public **receipt**, so a contributor's
 record of shipped work travels with them from project to project.
@@ -37,7 +57,7 @@ is already there.
 
 ## Why per-issue escrow
 
-| | Funding rounds | Parallax |
+| | Funding rounds | Escaro |
 | --- | --- | --- |
 | Unit of funding | A pool for a time window | One issue |
 | Price | Points converted to a share of the pool later | Fixed bounty, known before you apply |
@@ -45,7 +65,7 @@ is already there.
 | When you are paid | When the round closes | When your pull request merges |
 | Record of work | Platform history | A public, on-chain receipt per payout |
 
-Parallax is a complement to grant programs, not a replacement. A project in a funding round can
+Escaro is a complement to grant programs, not a replacement. A project in a funding round can
 still put money on an urgent issue the day it needs doing.
 
 ## How it works
@@ -106,13 +126,21 @@ sequenceDiagram
   </tr>
 </table>
 
+## Prerequisites
+
+| Tool | Notes |
+| --- | --- |
+| **Node.js** | 22+ (see `.nvmrc`) |
+| **npm** | bundled with Node |
+| **Rust + Stellar CLI** | only to build/ deploy the Soroban contracts |
+
 ## Quick start
 
 **Web app** — Node.js 22+
 
 ```bash
-git clone https://github.com/zeemscript/parallax.git
-cd parallax
+git clone https://github.com/Escaro-Labs/escaro.git
+cd escaro
 npm install
 npm run dev            # http://localhost:3000
 ```
@@ -139,7 +167,7 @@ Settings → **Reset preview data** restores the sample data at any time.
 ## Project structure
 
 ```
-parallax/
+escaro/
 ├── src/
 │   ├── lib/
 │   │   ├── platform.ts      # product name, chain, network, asset — all copy reads from here
@@ -173,18 +201,25 @@ CI runs all of these, plus the wasm build, on every pull request.
 
 - [x] Product flow in the browser: connect, fund, apply, assign, merge and release, receipts
 - [x] Soroban escrow contract with tests
-- [x] Deploy the contract to testnet — [#3](https://github.com/zeemscript/parallax/issues/3)
-- [ ] Connect Freighter for maintainers — [#2](https://github.com/zeemscript/parallax/issues/2)
-- [ ] Fund bounties on-chain from the dashboard — [#4](https://github.com/zeemscript/parallax/issues/4)
-- [ ] Read receipts from contract events — [#5](https://github.com/zeemscript/parallax/issues/5)
-- [ ] Top up an open bounty — [#6](https://github.com/zeemscript/parallax/issues/6)
+- [x] Deploy the contract to testnet — [#3](https://github.com/Escaro-Labs/escaro/issues/3)
+- [ ] Connect Freighter for maintainers — [#2](https://github.com/Escaro-Labs/escaro/issues/2)
+- [ ] Fund bounties on-chain from the dashboard — [#4](https://github.com/Escaro-Labs/escaro/issues/4)
+- [ ] Read receipts from contract events — [#5](https://github.com/Escaro-Labs/escaro/issues/5)
+- [ ] Top up an open bounty — [#6](https://github.com/Escaro-Labs/escaro/issues/6)
 - [ ] Passkey smart wallets so contributors can get paid without a seed phrase
 - [ ] GitHub app: real sign-in, ownership verification, release triggered by the merge
 
+## Security
+
+- **Never commit secrets** — keep keys, seed phrases, and `.env` files out of source control.
+- **Testnet values have no real-world value**; treat testnet deployments as experimental.
+- **Keys never leave the wallet** — signing is delegated to the user's Stellar wallet; the app does not store secret keys.
+- Report vulnerabilities per `SECURITY.md` where present rather than opening a public issue.
+
 ## Contributing
 
-Contributions are welcome — Parallax is built to be worked on in small, well-scoped pieces. Pick
-an [open issue](https://github.com/zeemscript/parallax/issues), comment with a short plan, and
+Contributions are welcome — Escaro is built to be worked on in small, well-scoped pieces. Pick
+an [open issue](https://github.com/Escaro-Labs/escaro/issues), comment with a short plan, and
 wait to be assigned. Issues labelled `complexity: trivial` are a good place to start.
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md) for setup, checks and pull request guidelines, and the
@@ -195,7 +230,7 @@ described in [SECURITY.md](SECURITY.md).
 
 The seeded repositories are **real, existing open-source projects** used as reference examples so
 the directory renders with genuine avatars. Their star counts, topics, issues and bounties are
-fixtures, and their presence here implies no affiliation with, or participation in, Parallax.
+fixtures, and their presence here implies no affiliation with, or participation in, Escaro.
 Sample contributors (`nadia.dev`, `kwame-o`, `lucia-m`, `tobi.k`) are fictional.
 
 ## License
