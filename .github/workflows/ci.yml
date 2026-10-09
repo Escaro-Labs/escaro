@@ -4,6 +4,15 @@ on:
   push:
     branches: [main]
   pull_request:
+  merge_group:
+
+# A queued merge commit runs both jobs; the queue's synthetic commit is
+# covered by merge_group above. The concurrency key below keeps the
+# queue alive (no cancel-in-progress for merge_group) while still
+# cancelling superseded runs on push and pull_request.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: ${{ github.event_name != 'merge_group' }}
 
 jobs:
   build-and-smoke:
