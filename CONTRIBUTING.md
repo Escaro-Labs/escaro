@@ -90,12 +90,12 @@ Install the Stellar CLI with `cargo install --locked stellar-cli`. On Linux this
 **Commit messages** use a conventional prefix:
 
 ```
-feat: add top_up to the escrow contract
+feat: add release to the escrow contract
 fix: keep explore search in sync with ?q=
 docs: document the testnet deploy
-test: cover the assignment limit
+test: cover the cancel/refund round-trip
 chore: remove unused font packages
-refactor: move status tones into model.ts
+refactor: move formatCount into model.ts
 ```
 
 ## Checks
