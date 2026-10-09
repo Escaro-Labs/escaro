@@ -160,7 +160,7 @@ work.
 - Write state before outgoing token transfers.
 - Add new errors at the end of the `Error` enum; never renumber existing ones.
 - Document new functions, events and errors in [contracts/README.md](contracts/README.md).
-- Commit the generated `test_snapshots/` files.
+- Commit the generated `test_snapshots/` files. Regenerate them by running `cd contracts && UPDATE_SOROBAN_SNAPSHOTS=1 cargo test` — this rewrites every `test_snapshots/test/*.json` against the current contract behavior. A snapshot change is part of the contract diff: review it as carefully as the `#[test]` body that produced it, because every line of the snapshot is the exact bytes the contract will emit on mainnet.
 
 ## Getting help
 
