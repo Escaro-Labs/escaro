@@ -48,6 +48,7 @@ interface State {
 
 - **Shape changes.** If you change `State`, bump `version` and `storageKey` together. `readState`
   discards anything that does not match, so old browser data is reset instead of misread.
+- **Persistence is best-effort.** The write effect in `src/lib/store.tsx` is wrapped in a `try`/`catch` whose `catch` is intentionally empty: private mode, a full `localStorage` quota, or a blocked storage partition silently stops persistence for the session. The in-memory `State` keeps running, but on reload `readState` finds nothing under `storageKey` and starts a fresh preview — so a maintainer who hit quota and refreshed will see seeded sample data, not their work. The note in `readState` says as much ("Unreadable storage starts a fresh preview"). Link the fix when one ships.
 - **Derived values** (escrowed totals, whether an issue is paid, status tones) are pure helpers in
   `model.ts`. Keep logic there rather than in components so it can be tested and reused.
 - **The signed-in contributor's own application** has no `applicant` field. Seeded sample
