@@ -77,6 +77,21 @@ try {
   await page.getByRole('tab', { name: 'Issues' }).click();
   await page.waitForURL('**/explore');
   await page.locator('.result-count', { hasText: '7 issues' }).waitFor();
+
+  // arrow-key navigation and roving tabindex on tabs
+  const issuesTab = page.getByRole('tab', { name: 'Issues' });
+  const reposTab = page.getByRole('tab', { name: 'Repositories' });
+  const orgsTab = page.getByRole('tab', { name: 'Organizations' });
+  assert.equal(await issuesTab.getAttribute('tabindex'), '0');
+  assert.equal(await reposTab.getAttribute('tabindex'), '-1');
+  assert.equal(await orgsTab.getAttribute('tabindex'), '-1');
+  await issuesTab.focus();
+  await page.keyboard.press('ArrowRight');
+  await page.waitForURL('**/explore/repos');
+  assert.equal(await reposTab.getAttribute('tabindex'), '0');
+  await page.keyboard.press('ArrowLeft');
+  await page.waitForURL('**/explore');
+  assert.equal(await issuesTab.getAttribute('tabindex'), '0');
   await page.getByRole('button', { name: 'Filters' }).click();
   await page.getByLabel('Complexity').selectOption('High');
   await settle();

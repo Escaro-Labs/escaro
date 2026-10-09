@@ -165,84 +165,86 @@ export function Explore({ tab }: { tab: Tab }) {
 
         <p className="result-count num">{count} {tab === 'issues' ? 'issues' : tab === 'repos' ? 'repositories' : 'organizations'}</p>
 
-        {tab === 'issues' && (issues.length ? (
-          <Stagger className="list">
-            {issues.map(issue => {
-              const repo = accepted.find(r => r.id === issue.repoId)!;
-              return (
-                <Item key={issue.id}>
-                  <Link className="list-row" to={`/issue/${issue.id}`}>
-                    <span className="mono dim issue-num">#{issue.id}</span>
-                    <span className="col" style={{ gap: 2, minWidth: 0, flex: 1 }}>
-                      <span className="row-title">{issue.title}</span>
-                      <span className="row-sub">{repoName(repo)}</span>
+        <div id={`explore-panel-${tab}`} role="tabpanel" aria-labelledby={`explore-tab-${tab}`}>
+          {tab === 'issues' && (issues.length ? (
+            <Stagger className="list">
+              {issues.map(issue => {
+                const repo = accepted.find(r => r.id === issue.repoId)!;
+                return (
+                  <Item key={issue.id}>
+                    <Link className="list-row" to={`/issue/${issue.id}`}>
+                      <span className="mono dim issue-num">#{issue.id}</span>
+                      <span className="col" style={{ gap: 2, minWidth: 0, flex: 1 }}>
+                        <span className="row-title">{issue.title}</span>
+                        <span className="row-sub">{repoName(repo)}</span>
+                      </span>
+                      <Chip className="hide-sm">{issue.complexity}</Chip>
+                      <Chip className="solid num">${formatMoney(issue.bounty)}</Chip>
+                      <ArrowUpRight size={14} className="dim hide-sm" />
+                    </Link>
+                  </Item>
+                );
+              })}
+            </Stagger>
+          ) : <Empty title="No issues match">Try a different search or clear the filters.</Empty>)}
+
+          {tab === 'repos' && (repos.length ? (
+            <Stagger className="grid c3">
+              {repos.map(r => (
+                <Item key={r.id} className="card repo-tile">
+                  <div className="row" style={{ gap: 10 }}>
+                    <Avatar name={r.org} org={r.org} square size="lg" />
+                    <span className="col" style={{ gap: 1, minWidth: 0 }}>
+                      <span className="row-title">{r.name}</span>
+                      <span className="row-sub">{r.org}</span>
                     </span>
-                    <Chip className="hide-sm">{issue.complexity}</Chip>
-                    <Chip className="solid num">${formatMoney(issue.bounty)}</Chip>
-                    <ArrowUpRight size={14} className="dim hide-sm" />
-                  </Link>
-                </Item>
-              );
-            })}
-          </Stagger>
-        ) : <Empty title="No issues match">Try a different search or clear the filters.</Empty>)}
-
-        {tab === 'repos' && (repos.length ? (
-          <Stagger className="grid c3">
-            {repos.map(r => (
-              <Item key={r.id} className="card repo-tile">
-                <div className="row" style={{ gap: 10 }}>
-                  <Avatar name={r.org} org={r.org} square size="lg" />
-                  <span className="col" style={{ gap: 1, minWidth: 0 }}>
-                    <span className="row-title">{r.name}</span>
-                    <span className="row-sub">{r.org}</span>
-                  </span>
-                </div>
-                <p className="muted repo-desc">{r.description}</p>
-                {r.topics && (
-                  <div className="row wrap" style={{ gap: 5 }}>
-                    {r.topics.map(t => <Chip key={t}>{t}</Chip>)}
                   </div>
-                )}
-                <div className="repo-meta">
-                  {r.languages[0] && <span className="row" style={{ gap: 5 }}><LangDot lang={r.languages[0]} />{r.languages[0]}</span>}
-                  <span className="row" style={{ gap: 4 }}><Star size={11} />{formatCount(r.stars)}</span>
-                  <span className="row" style={{ gap: 4 }}><GitFork size={11} />{formatCount(r.forks)}</span>
-                  {r.license && <span>{r.license}</span>}
-                </div>
-                <div className="row repo-foot">
-                  <span className="dim" style={{ fontSize: 'var(--t2)' }}>
-                    {r.updated ? `Updated ${relativeDate(r.updated)}` : ''}
-                  </span>
-                  <span className="spacer" />
-                  <Link className="btn xs" to={`/explore?q=${encodeURIComponent(r.name)}`}>
-                    {(n => `${n} ${n === 1 ? 'issue' : 'issues'}`)(state.issues.filter(i => i.repoId === r.id).length)}
-                  </Link>
-                </div>
-              </Item>
-            ))}
-          </Stagger>
-        ) : <Empty title="No repositories match">Try a different search term.</Empty>)}
+                  <p className="muted repo-desc">{r.description}</p>
+                  {r.topics && (
+                    <div className="row wrap" style={{ gap: 5 }}>
+                      {r.topics.map(t => <Chip key={t}>{t}</Chip>)}
+                    </div>
+                  )}
+                  <div className="repo-meta">
+                    {r.languages[0] && <span className="row" style={{ gap: 5 }}><LangDot lang={r.languages[0]} />{r.languages[0]}</span>}
+                    <span className="row" style={{ gap: 4 }}><Star size={11} />{formatCount(r.stars)}</span>
+                    <span className="row" style={{ gap: 4 }}><GitFork size={11} />{formatCount(r.forks)}</span>
+                    {r.license && <span>{r.license}</span>}
+                  </div>
+                  <div className="row repo-foot">
+                    <span className="dim" style={{ fontSize: 'var(--t2)' }}>
+                      {r.updated ? `Updated ${relativeDate(r.updated)}` : ''}
+                    </span>
+                    <span className="spacer" />
+                    <Link className="btn xs" to={`/explore?q=${encodeURIComponent(r.name)}`}>
+                      {(n => `${n} ${n === 1 ? 'issue' : 'issues'}`)(state.issues.filter(i => i.repoId === r.id).length)}
+                    </Link>
+                  </div>
+                </Item>
+              ))}
+            </Stagger>
+          ) : <Empty title="No repositories match">Try a different search term.</Empty>)}
 
-        {tab === 'orgs' && (orgs.length ? (
-          <Stagger className="grid c3">
-            {orgs.map(({ org, repos: list }) => (
-              <Item key={org} className="card repo-tile">
-                <div className="row" style={{ gap: 10 }}>
-                  <Avatar name={org} org={org} square size="lg" />
-                  <span className="col" style={{ gap: 1, minWidth: 0 }}>
-                    <span className="row-title">{org}</span>
-                    <span className="row-sub">{list.length} {list.length === 1 ? 'repository' : 'repositories'}</span>
-                  </span>
-                </div>
-                <p className="muted repo-desc">{list[0].description}</p>
-                <a className="btn xs" href={`https://github.com/${org}`} target="_blank" rel="noreferrer">
-                  GitHub<ArrowUpRight size={11} />
-                </a>
-              </Item>
-            ))}
-          </Stagger>
-        ) : <Empty title="No organizations match">Try a different search term.</Empty>)}
+          {tab === 'orgs' && (orgs.length ? (
+            <Stagger className="grid c3">
+              {orgs.map(({ org, repos: list }) => (
+                <Item key={org} className="card repo-tile">
+                  <div className="row" style={{ gap: 10 }}>
+                    <Avatar name={org} org={org} square size="lg" />
+                    <span className="col" style={{ gap: 1, minWidth: 0 }}>
+                      <span className="row-title">{org}</span>
+                      <span className="row-sub">{list.length} {list.length === 1 ? 'repository' : 'repositories'}</span>
+                    </span>
+                  </div>
+                  <p className="muted repo-desc">{list[0].description}</p>
+                  <a className="btn xs" href={`https://github.com/${org}`} target="_blank" rel="noreferrer">
+                    GitHub<ArrowUpRight size={11} />
+                  </a>
+                </Item>
+              ))}
+            </Stagger>
+          ) : <Empty title="No organizations match">Try a different search term.</Empty>)}
+        </div>
       </div>
     </Page>
   );
