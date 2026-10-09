@@ -13,13 +13,13 @@ keywords = ["S"]
 
 [allowlist]
 description = "Documented public testnet identifiers"
-# Public Stellar account ids (start with G) are not secrets. This covers the
-# testnet USDC issuer embedded in contracts/README.md and the USDC SAC ids.
+# Public Stellar account ids (G...) and contract ids (C...) are not secrets.
+# They are allowed by pattern, NOT by path, so a real secret seed (S...) pasted
+# into contracts/README.md is still flagged (see scripts/test-gitleaks-config.sh).
 regexes = [
   '''\bG[A-Z2-7]{55}\b''',
   '''\bC[A-Z2-7]{55}\b''',
 ]
 paths = [
-  '''contracts/README\.md''',
   '''package-lock\.json''',
 ]
