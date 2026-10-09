@@ -440,7 +440,7 @@ export function RepoSettings() {
       </div>
 
       <ModalHost open={confirm} title="Disconnect this repository?" onClose={() => setConfirm(false)}>
-        <p>{repoName(repo)} will be removed, its unpaid bounties returned from escrow, and its dashboard closed.</p>
+        <p>{repoName(repo)} will be removed, its unpaid issues removed, and its dashboard closed.</p>
         <button className="btn primary block" onClick={() => {
           setState(s => {
             const gone = new Set(s.issues.filter(i => i.repoId === repo.id).map(i => i.id));
