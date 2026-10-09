@@ -117,7 +117,7 @@ export function Crumbs({ items }: { items: { label: string; to?: string }[] }) {
       {items.map((item, i) => (
         <span key={i} className="row" style={{ gap: 5 }}>
           {i > 0 && <span className="sep">/</span>}
-          {item.to ? <Link to={item.to}>{item.label}</Link> : <strong>{item.label}</strong>}
+          {item.to ? <Link to={item.to}>{item.label}</Link> : <strong aria-current="page">{item.label}</strong>}
         </span>
       ))}
     </nav>
