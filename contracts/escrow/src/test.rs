@@ -2,7 +2,7 @@ extern crate std;
 
 use super::*;
 use soroban_sdk::{
-    testutils::{Address as _, Events as _},
+    testutils::{storage::Persistent as _, Address as _, Events as _, Ledger as _},
     token::{StellarAssetClient, TokenClient},
     Address, Env, Event as _, String,
 };
@@ -164,4 +164,94 @@ fn release_without_maintainer_auth_fails() {
         &id,
         &String::from_str(&s.env, "https://github.com/stellar/stellar-cli/pull/1"),
     );
+}
+
+#[test]
+fn bounty_for_survives_assign_ttl_threshold_crossing() {
+    // Regression for issue #29: a bounty funded once and then left Open
+    // while only assign is called must keep bounty_for returning Some(id)
+    // across TTL threshold crossings. fund() extends Key::Issue once;
+    // assign() must extend it again on its authoritative read.
+    let s = setup();
+    let id = s.escrow.fund(&s.maintainer, &s.repo, &842, &900);
+
+    // Advance the ledger so Key::Issue's remaining TTL falls below
+    // BUMP_THRESHOLD, which is the condition under which extend_ttl
+    // actually fires again (Soroban's bump is conditional).
+    let initial_seq = s.env.ledger().sequence();
+    s.env
+        .ledger()
+        .set_sequence_number(initial_seq + BUMP_TO - BUMP_THRESHOLD + 1);
+
+    // Before assign, Key::Issue's TTL should be just under BUMP_THRESHOLD.
+    let contract = s.escrow.address.clone();
+    let issue_key = Key::Issue(s.repo.clone(), 842);
+    let ttl_before = s.env.as_contract(&contract, || {
+        s.env.storage().persistent().get_ttl(&issue_key)
+    });
+    assert!(
+        ttl_before < BUMP_THRESHOLD,
+        "pre-assign Key::Issue TTL {} should be below BUMP_THRESHOLD {}",
+        ttl_before,
+        BUMP_THRESHOLD
+    );
+
+    // assign() reads the bounty authoritatively and (with the fix) extends
+    // Key::Issue's TTL. Without the fix, the TTL would stay below threshold.
+    s.escrow.assign(&id, &Some(s.contributor.clone()));
+
+    let ttl_after = s.env.as_contract(&contract, || {
+        s.env.storage().persistent().get_ttl(&issue_key)
+    });
+    assert!(
+        ttl_after >= BUMP_THRESHOLD,
+        "post-assign Key::Issue TTL {} should be at least BUMP_THRESHOLD {}",
+        ttl_after,
+        BUMP_THRESHOLD
+    );
+
+    // bounty_for must still return Some — Key::Issue is alive.
+    assert_eq!(s.escrow.bounty_for(&s.repo, &842), Some(id));
+}
+
+#[test]
+fn release_after_threshold_crossing_extends_issue_ttl_before_remove() {
+    // Defensive: release() extends Key::Issue TTL before remove() so the
+    // removal sees a live entry even when called just past the threshold.
+    let s = setup();
+    let id = s.escrow.fund(&s.maintainer, &s.repo, &842, &900);
+    s.escrow.assign(&id, &Some(s.contributor.clone()));
+
+    let initial_seq = s.env.ledger().sequence();
+    s.env
+        .ledger()
+        .set_sequence_number(initial_seq + BUMP_TO - BUMP_THRESHOLD + 1);
+
+    let pr = String::from_str(&s.env, "https://github.com/stellar/stellar-cli/pull/1");
+    // Should not panic on a stale entry; the extend_ttl before remove makes
+    // the removal path see a live entry.
+    s.escrow.release(&id, &pr);
+
+    assert_eq!(s.escrow.bounty_for(&s.repo, &842), None);
+    assert_eq!(s.escrow.get(&id).status, Status::Paid);
+}
+
+#[test]
+fn refund_after_threshold_crossing_extends_issue_ttl_before_remove() {
+    // Defensive: refund() extends Key::Issue TTL before remove() so the
+    // removal sees a live entry even when called just past the threshold.
+    let s = setup();
+    let id = s.escrow.fund(&s.maintainer, &s.repo, &842, &900);
+
+    let initial_seq = s.env.ledger().sequence();
+    s.env
+        .ledger()
+        .set_sequence_number(initial_seq + BUMP_TO - BUMP_THRESHOLD + 1);
+
+    s.escrow.refund(&id);
+
+    assert_eq!(s.escrow.bounty_for(&s.repo, &842), None);
+    assert_eq!(s.escrow.get(&id).status, Status::Refunded);
+    // The issue can be funded again once the old bounty is closed.
+    assert_eq!(s.escrow.fund(&s.maintainer, &s.repo, &842, &500), 2);
 }

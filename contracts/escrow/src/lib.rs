@@ -177,6 +177,13 @@ impl Escrow {
         bounty.maintainer.require_auth();
         bounty.assignee = assignee.clone();
         Self::save(&env, id, &bounty);
+        // The issue index entry is read authoritatively here (open_bounty
+        // carried bounty.repo / bounty.issue) — extend its TTL so bounty_for
+        // stays Some across TTL threshold crossings between fund and release.
+        let issue_key = Key::Issue(bounty.repo.clone(), bounty.issue);
+        env.storage()
+            .persistent()
+            .extend_ttl(&issue_key, BUMP_THRESHOLD, BUMP_TO);
         Assigned { id, assignee }.publish(&env);
         Ok(())
     }
@@ -190,9 +197,14 @@ impl Escrow {
         // State changes before the transfer, so a failed transfer reverts both.
         bounty.status = Status::Paid;
         Self::save(&env, id, &bounty);
+        // Extend the issue index entry's TTL before removal so the removal
+        // sees a live entry (a stale Key::Issue could otherwise leave the
+        // contract in a state where bounty_for returns None mid-release).
+        let issue_key = Key::Issue(bounty.repo.clone(), bounty.issue);
         env.storage()
             .persistent()
-            .remove(&Key::Issue(bounty.repo.clone(), bounty.issue));
+            .extend_ttl(&issue_key, BUMP_THRESHOLD, BUMP_TO);
+        env.storage().persistent().remove(&issue_key);
 
         token::Client::new(&env, &Self::token(env.clone())).transfer(
             &env.current_contract_address(),
@@ -219,9 +231,13 @@ impl Escrow {
 
         bounty.status = Status::Refunded;
         Self::save(&env, id, &bounty);
+        // Extend the issue index entry's TTL before removal, mirroring release —
+        // see release() for the rationale.
+        let issue_key = Key::Issue(bounty.repo.clone(), bounty.issue);
         env.storage()
             .persistent()
-            .remove(&Key::Issue(bounty.repo.clone(), bounty.issue));
+            .extend_ttl(&issue_key, BUMP_THRESHOLD, BUMP_TO);
+        env.storage().persistent().remove(&issue_key);
 
         token::Client::new(&env, &Self::token(env.clone())).transfer(
             &env.current_contract_address(),
