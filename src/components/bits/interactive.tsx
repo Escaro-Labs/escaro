@@ -6,8 +6,7 @@ import { AnimatePresence, motion, useAnimationFrame, useMotionValue } from 'moti
 
 const EASE = [0.2, 0.8, 0.2, 1] as const;
 
-const reduced = () =>
-  typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+import { useReducedMotion } from './useReducedMotion';
 
 /* ==========================================================================
    GooeyNav
@@ -18,6 +17,7 @@ const reduced = () =>
 interface GooItem { to: string; label: string; end?: boolean }
 
 export function GooeyNav({ items }: { items: GooItem[] }) {
+  const reduced = useReducedMotion();
   const { pathname } = useLocation();
   const filterId = useId().replace(/:/g, '');
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -47,7 +47,7 @@ export function GooeyNav({ items }: { items: GooItem[] }) {
   }, [sync, pathname]);
 
   const burst = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    if (reduced()) return;
+    if (reduced) return;
     const wrap = wrapRef.current;
     if (!wrap) return;
     const wr = wrap.getBoundingClientRect();
@@ -127,6 +127,7 @@ export function GooeyNav({ items }: { items: GooItem[] }) {
    ========================================================================== */
 
 export function Lanyard({ children, className = '' }: { children: ReactNode; className?: string }) {
+  const reduced = useReducedMotion();
   const hostRef = useRef<HTMLDivElement>(null);
   const cordRef = useRef<SVGPathElement>(null);
   const x = useMotionValue(0);
@@ -172,7 +173,7 @@ export function Lanyard({ children, className = '' }: { children: ReactNode; cla
       s.vy += (s.ty - s.y) * 0.22 * dt;
     } else {
       // Gravity pulls the badge back to rest; a slow breeze keeps it alive.
-      const breeze = reduced() ? 0 : Math.sin(t / 1400) * 5;
+      const breeze = reduced ? 0 : Math.sin(t / 1400) * 5;
       s.vx += (breeze - s.x) * 0.035 * dt;
       s.vy += (0 - s.y) * 0.05 * dt;
     }
@@ -217,10 +218,11 @@ export function CardSwap({
   interval?: number;
   className?: string;
 }) {
+  const reduced = useReducedMotion();
   const [order, setOrder] = useState(() => cards.map((_, i) => i));
 
   useEffect(() => {
-    if (reduced() || cards.length < 2) return;
+    if (reduced || cards.length < 2) return;
     const t = window.setInterval(() => setOrder(o => [...o.slice(1), o[0]]), interval);
     return () => window.clearInterval(t);
   }, [cards.length, interval]);
@@ -303,11 +305,12 @@ export function ProfileCard({
   avatar: ReactNode;
   stat?: string;
 }) {
+  const reduced = useReducedMotion();
   const ref = useRef<HTMLDivElement>(null);
 
   const onMove = (e: React.PointerEvent<HTMLDivElement>) => {
     const el = ref.current;
-    if (!el || reduced()) return;
+    if (!el || reduced) return;
     const r = el.getBoundingClientRect();
     const px = (e.clientX - r.left) / r.width;
     const py = (e.clientY - r.top) / r.height;
@@ -352,12 +355,13 @@ export function InfiniteSpiral({
   items: ReactNode[];
   className?: string;
 }) {
+  const reduced = useReducedMotion();
   const n = items.length;
   return (
     <div className={`spiral ${className}`}>
       <motion.div
         className="spiral-stage"
-        animate={reduced() ? undefined : { rotate: 360 }}
+        animate={reduced ? undefined : { rotate: 360 }}
         transition={{ duration: 46, ease: 'linear', repeat: Infinity }}
       >
         {items.map((item, i) => {
@@ -375,7 +379,7 @@ export function InfiniteSpiral({
                 top: `calc(50% + ${Math.sin(angle) * radius}px)`,
                 zIndex: n - i,
               }}
-              animate={reduced() ? undefined : { rotate: -360 }}
+              animate={reduced ? undefined : { rotate: -360 }}
               transition={{ duration: 46, ease: 'linear', repeat: Infinity }}
             >
               {item}

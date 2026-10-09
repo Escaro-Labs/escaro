@@ -14,19 +14,8 @@ import {
 
 const EASE = [0.2, 0.8, 0.2, 1] as const;
 
-/** True when the OS asks for reduced motion. Reveals then render immediately. */
-function useReducedMotion() {
-  const [reduced, setReduced] = useState(
-    () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches,
-  );
-  useEffect(() => {
-    const mq = matchMedia('(prefers-reduced-motion: reduce)');
-    const on = () => setReduced(mq.matches);
-    mq.addEventListener('change', on);
-    return () => mq.removeEventListener('change', on);
-  }, []);
-  return reduced;
-}
+import { useReducedMotion } from './useReducedMotion';
+export { useReducedMotion };
 
 /* ------------------------------------------------------------------ Aurora */
 /** Slow-drifting colour field behind the hero. */
