@@ -55,10 +55,13 @@ stellar contract build     # writes target/wasm32v1-none/release/parallax_escrow
 
 ## Deploy to testnet
 
+Every `stellar` command in this section names `--network testnet` explicitly so a single line copied out of the block resolves against the testnet and not the default network. The USDC issuer address `GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5` is Circle's published Stellar testnet USDC issuer; deploying on any other network requires a different issuer address.
+
 ```bash
 stellar keys generate maintainer --network testnet --fund
 
 # USDC on testnet is a classic asset; this prints its Stellar Asset Contract id.
+# GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5 is the Circle testnet USDC issuer.
 USDC=$(stellar contract id asset --network testnet \
   --asset USDC:GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5)
 
