@@ -24,6 +24,9 @@ jobs:
           rm gitleaks.tar.gz
           gitleaks version
 
+      - name: Test the gitleaks config (fake secrets flagged, public ids allowed)
+        run: scripts/test-gitleaks-config.sh gitleaks
+
       - name: Scan pull request diff
         if: github.event_name == 'pull_request'
         run: |
