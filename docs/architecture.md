@@ -20,7 +20,7 @@ flowchart LR
 ```
 
 Today the web app is self-contained: all state lives in the browser. The escrow contract is
-complete and tested on its own. Connecting the two is tracked in issues #2–#5.
+complete and tested on its own. Connecting the two is tracked in the repository's open issues.
 
 ## Web app
 
