@@ -1,0 +1,27 @@
+# gitleaks configuration for Escaro
+#
+# Default rules plus an allowlist that covers the documented testnet
+# addresses and demo values in contracts/README.md and src/lib/platform.ts.
+# Anything in this allowlist is a known public value (testnet issuer,
+# testnet contract id) — never a real secret.
+
+[allowlist]
+description = "Known public testnet addresses and demo values"
+
+# Allowlist by comment — any line whose trailing comment contains
+# `gitleaks:allow` is skipped. Use this in source code when a
+# high-entropy string is intentional and public (e.g., a testnet
+# issuer address documented in CONTRIBUTING).
+regexes = [
+  # Stellar testnet USDC issuer — Circle's published testnet address,
+  # documented in contracts/README.md and intentionally public.
+  'GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5',
+]
+
+# Allowlist paths — any path matching these is skipped entirely.
+paths = [
+  '''\.git/.*''',
+  '''node_modules/.*''',
+  '''target/.*''',
+  '''test-results/.*''',
+]

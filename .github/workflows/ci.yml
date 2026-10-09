@@ -76,3 +76,23 @@ jobs:
 
       - name: Build wasm
         run: stellar contract build
+
+  secrets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # Scan for high-entropy strings and known secret shapes (API keys,
+    # private keys, .env values) over the diff or commit range. The
+    # in-repo allowlist (.gitleaks-allowlist.toml) covers documented
+    # testnet addresses so they do not trip the scanner.
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0  # full history so we can diff against the base
+
+      - name: Scan for secrets with gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: true
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: true
+          GITLEAKS_CONFIG: .gitleaks.toml
