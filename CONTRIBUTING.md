@@ -100,14 +100,16 @@ refactor: move status tones into model.ts
 
 ## Checks
 
-CI runs all of these on every pull request. Run them locally first.
+CI runs `npm run build`, `npm run test:smoke`, the four contract commands, and `stellar contract build` on every pull request. Run all of the commands below locally first — `typecheck` is a fast separate gate that `build` re-runs as part of its pipeline, and `visual:check` is a pixel-diff regression that CI does not run yet.
 
 **Web app**
 
 ```bash
-npm run build                                 # typecheck + production build
+npm run typecheck                             # tsc -b, no emit; fast typecheck gate (build runs this too)
+npm run build                                 # typecheck + production build (CI gate)
 npm run dev                                   # in another terminal
-npm run test:smoke -- http://localhost:3000   # end-to-end smoke test
+npm run test:smoke -- http://localhost:3000   # end-to-end smoke test (CI gate)
+npm run visual:check                          # pixel-diff regression on the landing capture (local-only)
 ```
 
 The smoke test drives a headless Chromium. It uses `CHROME_PATH` if set, the stock Chrome install
