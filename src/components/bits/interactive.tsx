@@ -3,8 +3,7 @@ import {
 } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion, useAnimationFrame, useMotionValue } from 'motion/react';
-
-const EASE = [0.2, 0.8, 0.2, 1] as const;
+import { EASE } from './ease';
 
 const reduced = () =>
   typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
