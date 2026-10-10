@@ -1,0 +1,25 @@
+title = "Escaro gitleaks config"
+
+[extend]
+# Keep all the default gitleaks rules.
+useDefault = true
+
+# Stellar secret seeds ("S" + 55 base32 chars) are not covered by the default rules.
+[[rules]]
+id = "stellar-secret-seed"
+description = "Stellar secret seed (starts with S, 56 chars)"
+regex = '''\bS[A-Z2-7]{55}\b'''
+keywords = ["S"]
+
+[allowlist]
+description = "Documented public testnet identifiers"
+# Public Stellar account ids (G...) and contract ids (C...) are not secrets.
+# They are allowed by pattern, NOT by path, so a real secret seed (S...) pasted
+# into contracts/README.md is still flagged (see scripts/test-gitleaks-config.sh).
+regexes = [
+  '''\bG[A-Z2-7]{55}\b''',
+  '''\bC[A-Z2-7]{55}\b''',
+]
+paths = [
+  '''package-lock\.json''',
+]
