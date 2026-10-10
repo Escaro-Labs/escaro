@@ -407,7 +407,7 @@ p  { line-height: 1.6; }
 .crumbs { display: flex; align-items: center; gap: 5px; font-size: var(--t2); color: var(--ink-3); margin-bottom: var(--s3); flex-wrap: wrap; }
 .crumbs a:hover { color: var(--ink); }
 .crumbs .sep { color: var(--ink-4); }
-.crumbs strong { color: var(--ink-2); font-weight: 520; }
+.crumbs strong, .crumbs [aria-current="page"] { color: var(--ink-2); font-weight: 520; }
 
 .empty {
   display: flex; flex-direction: column; align-items: center; gap: 8px;
