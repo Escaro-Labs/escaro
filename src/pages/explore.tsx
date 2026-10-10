@@ -23,11 +23,18 @@ export function Explore({ tab }: { tab: Tab }) {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const [q, setQ] = useState(params.get('q') ?? '');
-  const [level, setLevel] = useState<Complexity | 'Any'>('Any');
-  const [lang, setLang] = useState('Any');
-  const [sort, setSort] = useState<(typeof SORTS)[number]>('Newest');
+  const [level, setLevel] = useState<Complexity | 'Any'>((params.get('level') as Complexity) || 'Any');
+  const [lang, setLang] = useState(params.get('lang') ?? 'Any');
+  const [sort, setSort] = useState<(typeof SORTS)[number]>((params.get('sort') as (typeof SORTS)[number]) || 'Newest');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const urlQ = params.get('q') ?? '';
+    if (urlQ !== q) {
+      setQ(urlQ);
+    }
+  }, [params, q]);
 
   useEffect(() => {
     if (params.get('focus')) {
@@ -37,6 +44,52 @@ export function Explore({ tab }: { tab: Tab }) {
       setParams(next, { replace: true });
     }
   }, [params, setParams]);
+
+  const updateQuery = (nextQ: string) => {
+    setQ(nextQ);
+    const next = new URLSearchParams(params);
+    if (nextQ.trim()) {
+      next.set('q', nextQ);
+    } else {
+      next.delete('q');
+    }
+    setParams(next, { replace: true });
+  };
+
+  const updateLevel = (nextLevel: Complexity | 'Any') => {
+    setLevel(nextLevel);
+    const next = new URLSearchParams(params);
+    if (nextLevel !== 'Any') next.set('level', nextLevel);
+    else next.delete('level');
+    setParams(next, { replace: true });
+  };
+
+  const updateLang = (nextLang: string) => {
+    setLang(nextLang);
+    const next = new URLSearchParams(params);
+    if (nextLang !== 'Any') next.set('lang', nextLang);
+    else next.delete('lang');
+    setParams(next, { replace: true });
+  };
+
+  const updateSort = (nextSort: (typeof SORTS)[number]) => {
+    setSort(nextSort);
+    const next = new URLSearchParams(params);
+    if (nextSort !== 'Newest') next.set('sort', nextSort);
+    else next.delete('sort');
+    setParams(next, { replace: true });
+  };
+
+  const resetFilters = () => {
+    setLevel('Any');
+    setLang('Any');
+    setSort('Newest');
+    const next = new URLSearchParams(params);
+    next.delete('level');
+    next.delete('lang');
+    next.delete('sort');
+    setParams(next, { replace: true });
+  };
 
   const accepted = useMemo(() => state.repos.filter(r => r.status === 'Verified'), [state.repos]);
   const languages = useMemo(
@@ -91,7 +144,11 @@ export function Explore({ tab }: { tab: Tab }) {
             idPrefix="explore"
             value={tab}
             options={TABS}
-            onChange={v => navigate(v === 'issues' ? '/explore' : `/explore/${v}`)}
+            onChange={v => {
+              const nextPath = v === 'issues' ? '/explore' : `/explore/${v}`;
+              const searchStr = params.toString();
+              navigate(searchStr ? `${nextPath}?${searchStr}` : nextPath);
+            }}
           />
           <label className="search explore-search">
             <Search size={14} />
@@ -100,10 +157,10 @@ export function Explore({ tab }: { tab: Tab }) {
               aria-label="Search"
               placeholder={tab === 'orgs' ? 'Search organizations…' : tab === 'repos' ? 'Search repositories…' : 'Search issues…'}
               value={q}
-              onChange={e => setQ(e.target.value)}
+              onChange={e => updateQuery(e.target.value)}
             />
             {q && (
-              <button className="btn ghost icon xs" aria-label="Clear search" onClick={() => setQ('')}>
+              <button className="btn ghost icon xs" aria-label="Clear search" onClick={() => updateQuery('')}>
                 <X size={12} />
               </button>
             )}
@@ -135,14 +192,14 @@ export function Explore({ tab }: { tab: Tab }) {
                   <label className="field inline">
                     <span>Complexity</span>
                     <select className="select" aria-label="Complexity" value={level}
-                      onChange={e => setLevel(e.target.value as Complexity | 'Any')}>
+                      onChange={e => updateLevel(e.target.value as Complexity | 'Any')}>
                       {LEVELS.map(l => <option key={l}>{l}</option>)}
                     </select>
                   </label>
                 )}
                 <label className="field inline">
                   <span>Language</span>
-                  <select className="select" aria-label="Language" value={lang} onChange={e => setLang(e.target.value)}>
+                  <select className="select" aria-label="Language" value={lang} onChange={e => updateLang(e.target.value)}>
                     {languages.map(l => <option key={l}>{l}</option>)}
                   </select>
                 </label>
@@ -150,12 +207,12 @@ export function Explore({ tab }: { tab: Tab }) {
                   <label className="field inline">
                     <span>Sort</span>
                     <select className="select" aria-label="Sort" value={sort}
-                      onChange={e => setSort(e.target.value as (typeof SORTS)[number])}>
+                      onChange={e => updateSort(e.target.value as (typeof SORTS)[number])}>
                       {SORTS.map(s => <option key={s}>{s}</option>)}
                     </select>
                   </label>
                 )}
-                <button className="btn sm ghost" onClick={() => { setLevel('Any'); setLang('Any'); setSort('Newest'); }}>
+                <button className="btn sm ghost" onClick={resetFilters}>
                   Reset
                 </button>
               </div>

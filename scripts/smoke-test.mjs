@@ -61,6 +61,16 @@ try {
   await page.getByLabel('Search', { exact: true }).fill('quickstart');
   await settle();
   assert.equal(await page.locator('.list-row').count(), 1);
+
+  // tab switching preserves query across views without retyping
+  await page.getByRole('tab', { name: 'Repositories' }).click();
+  await page.waitForURL('**/explore/repos?q=quickstart');
+  await page.getByRole('tab', { name: 'Issues' }).click();
+  await page.waitForURL('**/explore?q=quickstart');
+  await settle();
+  assert.equal(await page.locator('.list-row').count(), 1, 'query is preserved across tabs without retyping');
+
+  // Clear search to verify full repository and organization counts
   await page.getByLabel('Search', { exact: true }).fill('');
   // Wait on each tab's own result count: the previous tab's tiles linger for a
   // frame after the URL changes, so waiting on any tile can count the old view.
