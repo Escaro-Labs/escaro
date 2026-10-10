@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
@@ -154,15 +154,47 @@ export function Segmented<T extends string>({
   onChange: (v: T) => void;
   idPrefix: string;
 }) {
+  const buttonRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  const onKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
+    let nextIndex = -1;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      nextIndex = (currentIndex + 1) % options.length;
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      nextIndex = (currentIndex - 1 + options.length) % options.length;
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      nextIndex = 0;
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      nextIndex = options.length - 1;
+    }
+
+    if (nextIndex !== -1 && nextIndex !== currentIndex) {
+      const nextOpt = options[nextIndex];
+      if (nextOpt) {
+        onChange(nextOpt.value);
+        buttonRefs.current[nextIndex]?.focus();
+      }
+    }
+  };
+
   return (
     <div className="seg" role="tablist">
-      {options.map(opt => (
+      {options.map((opt, i) => (
         <button
           key={opt.value}
+          ref={el => { buttonRefs.current[i] = el; }}
+          id={`${idPrefix}-tab-${opt.value}`}
           role="tab"
+          aria-controls={`${idPrefix}-panel-${opt.value}`}
           aria-selected={value === opt.value}
+          tabIndex={value === opt.value ? 0 : -1}
           data-on={value === opt.value}
           onClick={() => onChange(opt.value)}
+          onKeyDown={e => onKeyDown(e, i)}
         >
           {value === opt.value && (
             <motion.span
