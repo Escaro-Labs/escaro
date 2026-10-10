@@ -53,7 +53,7 @@ is already there.
 > [!NOTE]
 > **Status: testnet preview.** The escrow contract is deployed to Stellar testnet. The web app
 > still runs the full product flow on local browser data and does not call the contract yet, so no
-> real funds move. See the [roadmap](#roadmap).
+> real funds move; refunding is a contract-only path today and is not wired to the app. See the [roadmap](#roadmap).
 
 ## Why per-issue escrow
 
@@ -94,7 +94,7 @@ sequenceDiagram
    automatically.
 4. **Build.** The assignee opens a pull request.
 5. **Merge and release.** Merging releases the bounty to the contributor's Stellar address and
-   writes their receipt. Unpaid bounties can be refunded to the maintainer.
+   writes their receipt. Unpaid bounties can be refunded to the maintainer directly through the escrow contract.
 
 ## Features
 
