@@ -5,7 +5,8 @@ import { AnimatePresence, motion } from 'motion/react';
 import { X } from 'lucide-react';
 import { LANG_COLOR, orgAvatar } from '../lib/platform';
 
-export const EASE = [0.2, 0.8, 0.2, 1] as const;
+import { EASE } from './bits/ease';
+export { EASE };
 
 /** Page-level entrance. Every route body uses this so navigation feels continuous. */
 export function Page({ children, className = '' }: { children: ReactNode; className?: string }) {

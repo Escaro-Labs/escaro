@@ -11,8 +11,7 @@ import {
 import {
   AnimatePresence, motion, useInView, useMotionValue, useSpring, useTransform,
 } from 'motion/react';
-
-const EASE = [0.2, 0.8, 0.2, 1] as const;
+import { EASE } from './ease';
 
 import { useReducedMotion } from './useReducedMotion';
 export { useReducedMotion };
